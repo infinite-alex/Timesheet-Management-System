@@ -29,3 +29,5 @@ replay_pid*
 
 # internal notes (client data derived)
 lista-actiuni.md
+
+target/
