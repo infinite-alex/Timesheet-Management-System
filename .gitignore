@@ -31,3 +31,6 @@ replay_pid*
 lista-actiuni.md
 
 target/
+# local secrets (never commit)
+.env
+application-local.properties
