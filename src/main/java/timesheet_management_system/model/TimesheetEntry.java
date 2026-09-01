@@ -8,13 +8,13 @@ public class TimesheetEntry {
     private LocalDate date;
     private Employee employee;
     private Client client;
-    private String workingmonth;
+    private WorkingMonth workingmonth;
     private int totalMinutes;
     private List<String> actions;
     private String extranote;
 
 
-public TimesheetEntry(LocalDate date,Employee employee,Client client,String workingmonth,
+public TimesheetEntry(LocalDate date,Employee employee,Client client,WorkingMonth workingmonth,
     int totalMinutes,List<String> actions, String extranote){
     this.date = date;
     this.employee = employee;
@@ -28,7 +28,7 @@ public TimesheetEntry(LocalDate date,Employee employee,Client client,String work
 public void setClient(Client client){
     this.client = client;
 }
-public void setWorkingMonth(String workingmonth){
+public void setWorkingMonth(WorkingMonth workingmonth){
     this.workingmonth = workingmonth;
 }
 public void setTotalMinutes(int totalMinutes){
@@ -50,7 +50,7 @@ public Employee getEmployee(){
 public Client getClient(){
     return client;
 }
-public String getWorkingMonth(){
+public WorkingMonth getWorkingMonth(){
     return workingmonth;
 }
 public int getTotalMinutes(){
