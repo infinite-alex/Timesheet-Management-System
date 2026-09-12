@@ -1,5 +1,6 @@
 package timesheet_management_system.dto;
 
-public record EmployeeDto(Long id, String name) {
-    
+import timesheet_management_system.model.Role;
+
+public record EmployeeDto(Long id, String name, String username, Role role) {
 }
