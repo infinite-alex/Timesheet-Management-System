@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pontajele mele</title>
+</head>
+<body>
+    <h1>Pontajele mele</h1>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Client (id)</th>
+                <th>Lună</th>
+                <th>Minute</th>
+                <th>Acțiuni</th>
+                <th>Notă</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="entry : ${entries}">
+                <td th:text="${entry.date()}"></td>
+                <td th:text="${entry.clientId()}"></td>
+                <td th:text="${entry.workingmonth()}"></td>
+                <td th:text="${entry.totalMinutes()}"></td>
+                <td th:text="${entry.actions()}"></td>
+                <td th:text="${entry.extranote()}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Adaugă pontaj nou</h2>
+    <form id="entryForm">
+        <div>
+            <label>Data (YYYY-MM-DD):</label>
+            <input type="date" id="date" required />
+        </div>
+        <div>
+            <label>Client ID (opțional):</label>
+            <input type="number" id="clientId" />
+        </div>
+        <div>
+            <label>Lună (ex: IANUARIE):</label>
+            <input type="text" id="workingmonth" required />
+        </div>
+        <div>
+            <label>Total minute:</label>
+            <input type="number" id="totalMinutes" required />
+        </div>
+        <div>
+            <label>Notă:</label>
+            <input type="text" id="extranote" />
+        </div>
+        <button type="submit">Salvează</button>
+    </form>
+
+    <script th:inline="javascript">
+        document.getElementById('entryForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            var clientIdValue = document.getElementById('clientId').value;
+
+            var payload = {
+                date: document.getElementById('date').value,
+                employeeId: null,
+                clientId: clientIdValue ? Number(clientIdValue) : null,
+                workingmonth: document.getElementById('workingmonth').value.toUpperCase(),
+                totalMinutes: Number(document.getElementById('totalMinutes').value),
+                actions: [],
+                extranote: document.getElementById('extranote').value
+            };
+
+            fetch('/api/timesheet-entries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function (response) {
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    alert('Eroare la salvare: ' + response.status);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

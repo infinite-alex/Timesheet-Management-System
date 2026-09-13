@@ -3,11 +3,13 @@ package timesheet_management_system.service;
 import timesheet_management_system.dto.TimesheetEntryDto;
 import timesheet_management_system.model.Client;
 import timesheet_management_system.model.Employee;
+import timesheet_management_system.model.Role;
 import timesheet_management_system.model.TimesheetEntry;
 import timesheet_management_system.repository.ClientRepository;
 import timesheet_management_system.repository.EmployeeRepository;
 import timesheet_management_system.repository.TimesheetEntryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,16 +29,50 @@ public class TimesheetEntryService {
     }
 
     public List<TimesheetEntryDto> findAll() {
+        Employee currentEmployee = getCurrentEmployee();
+
+        List<TimesheetEntry> entries;
+        if (currentEmployee.getRole() == Role.ADMIN) {
+            entries = timesheetEntryRepository.findAll();
+        } else {
+            entries = timesheetEntryRepository.findByEmployee(currentEmployee);
+        }
+
         List<TimesheetEntryDto> dtos = new ArrayList<>();
-        List<TimesheetEntry> entries = timesheetEntryRepository.findAll();
         for (TimesheetEntry entry : entries) {
             dtos.add(toDto(entry));
         }
         return dtos;
     }
 
+    private Employee getCurrentEmployee() {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        return employeeRepository.findByUsername(currentUsername)
+            .orElseThrow(() -> new RuntimeException("Employee not found for username: " + currentUsername));
+    }
+
     public TimesheetEntryDto save(TimesheetEntryDto dto) {
-        TimesheetEntry saved = timesheetEntryRepository.save(toEntity(dto));
+        Employee currentEmployee = getCurrentEmployee();
+
+        Long effectiveEmployeeId;
+        if (currentEmployee.getRole() == Role.ADMIN) {
+            effectiveEmployeeId = dto.employeeId();
+        } else {
+            effectiveEmployeeId = currentEmployee.getId();
+        }
+
+        TimesheetEntryDto effectiveDto = new TimesheetEntryDto(
+            dto.id(),
+            dto.date(),
+            effectiveEmployeeId,
+            dto.clientId(),
+            dto.workingmonth(),
+            dto.totalMinutes(),
+            dto.actions(),
+            dto.extranote()
+        );
+
+        TimesheetEntry saved = timesheetEntryRepository.save(toEntity(effectiveDto));
         return toDto(saved);
     }
     private TimesheetEntryDto toDto(TimesheetEntry entry) {
