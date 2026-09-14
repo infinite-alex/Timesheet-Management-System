@@ -15,9 +15,9 @@ public class TimesheetEntryPageController {
         this.timesheetEntryService = timesheetEntryService;
     }
 
-    @GetMapping("/pontajele-mele")
+    @GetMapping("/pontaj")
     public String myEntries(Model model) {
         model.addAttribute("entries", timesheetEntryService.findAll());
-        return "pontajele-mele";
+        return "pontaj";
     }
 }

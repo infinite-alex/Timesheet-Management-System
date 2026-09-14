@@ -15,7 +15,7 @@ public class HomeController {
         if (isAdmin) {
             return "redirect:/admin";
         } else {
-            return "redirect:/pontajele-mele";
+            return "redirect:/pontaj";
         }
     }
 }
