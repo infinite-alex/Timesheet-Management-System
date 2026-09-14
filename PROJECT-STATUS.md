@@ -1,43 +1,42 @@
 # Status proiect — Timesheet Management System
 
 ## Stack
-Spring Boot 4.1.0 (Java 21), Spring Data JPA, Spring Security, Spring Validation, Spring Web MVC, PostgreSQL, Lombok (adăugat ca dependință, dar neutilizat încă în cod), Maven.
+Spring Boot 4.1.0 (Java 21), Spring Data JPA, Spring Security, Spring Validation (dependință prezentă, neconectată încă — vezi mai jos), Spring Web MVC, Thymeleaf, PostgreSQL, Lombok (dependință, dar neutilizat încă în cod), Maven.
 
 ## Obiectiv
 Aplicație de gestionare a pontajelor pentru un birou de contabilitate. Modelul de date și lista de tipuri de acțiuni au fost derivate din analiza a 32 fișiere Excel de pontaj istoric (~64.400 înregistrări).
 
-## Stadiu actual (24 iulie 2026)
-- 4 commit-uri în total, primul pe 24 iunie, ultimul pe 17 iulie. Există modificări necommise în working tree la data asta.
-- Există doar clase model **plain Java (POJO)**, fără adnotări JPA (`@Entity`, `@Id`, `@Table` etc.):
-  - `Client` — doar câmpul `name`, cu getter/setter.
-  - `Employee` — doar câmpul `name`, cu getter/setter.
-  - `TimesheetEntry` — **completată azi** (vezi "Progres 24 iulie 2026" mai jos): constructor + getteri/setteri corecți pentru toate cele 7 câmpuri.
-  - `ActionCatalog` — nu e entitate; e o listă hardcodată de tipuri de acțiuni (nume) cu metodă `addActions`.
-- Nu există încă: repository-uri, service layer, DTO-uri, controllere REST, configurare Spring Security, validare, logică de import din Excel, teste (doar testul default generat de Spring Initializr, `DemoApplicationTests`).
+## Stadiu actual (13 septembrie 2026)
+Proiectul a avansat mult față de update-ul din 24 iulie: entitățile sunt acum JPA reale, iar layerele de repository/service/controller/security există și funcționează.
 
-## Progres 24 iulie 2026
-- **GitHub Project board** (`github.com/users/infinite-alex/projects/3/views/3`) actualizat: create 8 issues noi în coloana Todo (#10–#17), acoperind restul pașilor din "Ce urmează" de mai jos, plus un issue separat de securitate pentru parola din `application.properties` (problema #1 de mai jos).
-- **`TimesheetEntry.java` completată** — clasă corectă acum din punct de vedere Java (nu neapărat gata pentru JPA):
-  - Constructor cu toți cei 7 parametri, `this.camp = parametru`, fără `new` greșit.
-  - Setteri doar pentru câmpurile decise mutabile: `client`, `workingmonth`, `totalMinutes`, `actions`, `extranote`. **Fără setter pentru `date` și `employee`** — decizie de design: `date`/`employee` se fixează la creare (employee vine din sesiunea de login, nu se editează ulterior), restul pot fi corectate.
-  - Getteri pentru toate cele 7 câmpuri, fără parametri.
-  - `workingmonth` a rămas `String` deocamdată — plan: transformat în `enum` (fie `java.time.Month` built-in, fie un enum propriu în română), ca să restricționeze valorile la o listă predefinită de luni și să elimine greșelile de tastare. **De făcut de user, nescris încă.**
-  - Notă pentru mai târziu (encapsulare): `getActions()` returnează direct referința către lista internă `this.actions` — apelantul poate modifica lista fără să treacă prin `setActions`. De revizitat la partea de service/validare (posibil defensive copy).
+- **Modele** — entități JPA complete, cu adnotări și relații:
+  - `Client`, `Employee` (cu `Role` — enum ADMIN/EMPLOYEE), `TimesheetEntry` (relații `@ManyToOne` către `Employee`/`Client`, `workingmonth` acum `enum WorkingMonth` în loc de `String`).
+  - `ActionCatalog` — listă hardcodată de tipuri de acțiuni.
+- **Repository layer** (Spring Data JPA) — `ClientRepository`, `EmployeeRepository`, `TimesheetEntryRepository`. Făcut.
+- **Service layer** — `ClientService`, `EmployeeService`, `TimesheetEntryService`. `TimesheetEntryService.findAll()` filtrează după rol: ADMIN vede toate înregistrările, EMPLOYEE doar pe ale lui (prin `SecurityContextHolder`).
+- **DTO-uri + controllere REST** — `ClientDto`, `EmployeeDto`, `EmployeeCreateDto`, `TimesheetEntryDto` + `ClientController`, `EmployeeController`, `TimesheetEntryController` (`/api/...`, CRUD de bază: GET/POST).
+- **Securitate** — `SecurityConfig`, `EmployeeUserDetailsService`, `AdminSeeder` (creează un admin la pornire), `LoginController` + `login.html`. Autentificare pe bază de sesiune, cu rol per `Employee`.
+- **Frontend (început 13 septembrie)** — primele pagini Thymeleaf: `login.html`, `pontajele-mele.html` (pagina de pontaje a angajatului), servite prin `HomeController` și `TimesheetEntryPageController`.
+- **Parola bazei de date** — nu mai e în clar în `application.properties`; se citește din variabila de mediu `DB_PASSWORD` (issue #17, închis).
 
-## Probleme de rezolvat cu prioritate
-1. **`application.properties` conține parola bazei de date în clar și e commisă în git** (`src/main/resources/application.properties`) — trebuie mutată în variabilă de mediu sau fișier ignorat de git, și schimbată parola. Tracked ca issue [#17](https://github.com/infinite-alex/Timesheet-Management-System/issues/17) pe board.
-2. Modelele nu sunt încă entități JPA reale — lipsesc adnotările și relațiile (FK) dintre `TimesheetEntry` ↔ `Employee`/`Client`.
-3. ~~`TimesheetEntry` e incomplet (fără getteri/setteri/constructor)~~ — **rezolvat 24 iulie 2026**, vezi "Progres 24 iulie 2026" mai sus. Rămâne doar `workingmonth` de trecut pe `enum` în loc de `String`.
+## Ce lipsește încă (verificat direct în cod, nu doar din issues)
+1. **Import date istorice din Excel** (#14) — nicio dependință Apache POI în `pom.xml`, niciun serviciu/endpoint de import. Nefăcut.
+2. **Validare (Bean Validation) + tratare globală a erorilor** (#15) — dependința `spring-boot-starter-validation` e în `pom.xml`, dar nu e folosită: niciun `@Valid` pe controllere, niciun `@ControllerAdvice`/`@ExceptionHandler`. Erorile curente aruncă `RuntimeException` simplu (ex. în `TimesheetEntryService.getCurrentEmployee`/`toEntity`), fără mapare la coduri HTTP sau mesaje curate.
+3. **Teste unitare și de integrare** (#16) — doar testul default generat de Spring Initializr, `DemoApplicationTests`. Nimic pentru service/repository/controller.
+4. **Rapoarte** — `raport persoana-client` (#5) și `raport persoana - data` (#4) — nu există cod dedicat de agregare/raportare.
+5. **`timpul adunat`** (#9, agregare ore lucrate) — nu există logică de sumă/agregare în `TimesheetEntryService` sau altundeva încă.
+6. **Encapsulare `TimesheetEntry`** — `getActions()`/`setActions()` fac deja copie defensivă (`new ArrayList<>(...)`), deci nota veche despre asta e rezolvată.
 
-## Ce urmează (ordine sugerată)
-1. Transformă `Client`, `Employee`, `TimesheetEntry`, `ActionCatalog` (sau echivalent) în entități JPA reale, cu id-uri și relații corecte.
-2. Repository layer (Spring Data JPA).
-3. Service layer + logică de business (validări, calcule ore/minute etc.).
-4. DTO-uri + controllere REST (CRUD pentru Client, Employee, TimesheetEntry).
-5. Securitate (autentificare/autorizare — de decis: basic auth, JWT etc.).
-6. Import date istorice din cele 32 fișiere Excel (~64.400 rânduri) — script sau endpoint dedicat de import/migrare.
-7. Validare (Bean Validation) + tratare globală a erorilor.
-8. Teste unitare și de integrare.
+## Discrepanță issues vs. cod (de curățat pe GitHub)
+Issue-urile #10 (Repository layer), #11 (Service layer), #12 (Securitate), #13 (DTO-uri + controllere REST) apar încă **deschise** pe GitHub, dar munca corespunzătoare e deja făcută și commisă (`service + repository`, `CRUD API layer done`, `beginning of security config`). Ar trebui închise pentru ca board-ul să reflecte realitatea.
+
+## Ce urmează (ordine sugerată, actualizată)
+1. Validare (Bean Validation pe DTO-uri) + `@ControllerAdvice` pentru tratare globală a erorilor — înlocuiește `RuntimeException`-urile simple din servicii.
+2. Teste unitare (service layer) și de integrare (repository/controller).
+3. Import date istorice din cele 32 fișiere Excel (~64.400 rânduri).
+4. Logică de agregare a orelor (`timpul adunat`) și rapoarte per persoană/client/dată.
+5. Continuare frontend (CRUD complet din UI, nu doar listare pontaje proprii).
+6. Închiderea issue-urilor #10–#13 pe GitHub, ca board-ul să reflecte stadiul real.
 
 ## Context pentru planificare
-Lucrul la proiect e part-time, în afara unui job de contabilitate. În august disponibilitatea va fi aproape zero — orice plan de task-uri/sprint ar trebui să țină cont de pauza asta.
+Lucrul la proiect e part-time, în afara unui job de contabilitate. În august disponibilitatea a fost aproape zero — planul de mai sus presupune reluarea ritmului din septembrie.
