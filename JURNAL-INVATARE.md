@@ -29,14 +29,31 @@ Am construit stratul de API REST peste entitățile JPA existente (`Client`, `Em
 
 ---
 
-## [Dată] — [Nume etapă următoare]
+## 2026-09-14 — Sesiune cu Claude Code: audit stadiu real, UI `/pontaj`, auto-reload, curățare issues
 
-**Ce am făcut:**
+**Ce am făcut (cu asistență Claude Code — nu doar eu):**
+- Am cerut o comparație între `PROJECT-STATUS.md`/issues GitHub și codul real din `src/`. A ieșit că repository/service/DTO/controller/security erau deja implementate (commit-uri `service + repository`, `CRUD API layer done`, `beginning of security config`), dar issue-urile #10–#13 rămăseseră deschise pe board — board-ul nu reflecta realitatea.
+- Am pornit aplicația local (`./mvnw.cmd spring-boot:run`), am descoperit că logarea ca `admin` dădea 404 (`HomeController` redirecționează adminii la `/admin`, rută care nu există încă).
+- Am creat un cont nou de test (`alexandra` / `ANGAJAT`) prin `POST /api/employees`, autentificat cu sesiunea admin.
+- Am reprodus o eroare 500 la adăugare de pontaj cu un `clientId` inexistent (4) — cauza: `TimesheetEntryService.toEntity` aruncă `RuntimeException` necapturată (nu există `@ControllerAdvice`), exact ce lipsea și în lista de task-uri (#15).
+- Am redenumit pagina `/pontajele-mele` → `/pontaj`, cu 2 taburi (butoane): „Vezi pontaje" și „Adaugă pontaj", în loc de tot pe o singură pagină lungă.
+- Am adăugat `spring-boot-devtools` în `pom.xml` + `java.autobuild.enabled: true` în `.vscode/settings.json`, ca să nu mai fie nevoie de restart manual al serverului la fiecare schimbare (funcționează cu extensiile Java/Maven din VS Code, fără IntelliJ).
+- Am stilizat `login.html` și `pontaj.html` (temă roșu/negru: header negru, taburi active roșii, card alb).
+- Am închis issue-urile **#10, #11, #12, #13** pe GitHub (deja implementate — board neactualizat) și **#14** (import Excel istoric — decizie: nu se mai face).
 
 **De ce am făcut așa:**
+- **Board-ul GitHub trebuie să reflecte codul real**, altfel devine o sursă de neîncredere — mai bine închis la timp decât lăsat să acumuleze discrepanțe.
+- **Taburi în loc de o singură pagină lungă** — separă clar acțiunea de "citire" (listă) de cea de "scriere" (formular), mai ales pe măsură ce pagina va crește (rapoarte, filtrare etc.).
+- **DevTools + autobuild** — ciclul editare → restart manual → testare era lent; automatizarea lui scurtează bucla de feedback.
+- **Renunțare la importul Excel** — decizie conștientă de scop, nu incapacitate; task-ul rămâne documentat ca respins explicit (won't-do), nu doar uitat.
 
 **Concepte noi învățate:**
+- CSRF în Spring Security: formularele Thymeleaf randate cu `th:action` primesc automat un `<input type="hidden" name="_csrf">` prin `RequestDataValueProcessor` — un POST care nu trimite acest token (ex. din `curl` fără el) eșuează silențios cu redirect, nu cu eroare explicită.
+- `spring-boot-devtools` face restart automat doar când apar `.class`-uri noi în `target/classes` — recompilarea trebuie declanșată de altundeva (IDE cu auto-build, sau manual).
+- O excepție neprinsă (`RuntimeException` fără `@ControllerAdvice`) devine automat 500 generic — fără tratare explicită a erorilor, orice bug de date (id inexistent) arată identic cu un bug real de server.
 
 **Unde m-am blocat / ce am înțeles greșit prima dată:**
+- Am presupus că `HomeController` are deja o pagină `/admin` funcțională — de fapt doar redirecționează acolo, pagina nu există (404).
+- Am încercat să adaug un pontaj cu un `Client ID` ales la întâmplare (4), fără să știu că tabela `client` era complet goală — de aici eroarea 500.
 
 ---
