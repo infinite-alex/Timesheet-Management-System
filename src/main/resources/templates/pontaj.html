@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Pontaj')}"></head>
 <body>
-<header th:replace="~{fragments :: hero('Pontajul tău', 'Vezi ce ai lucrat și adaugă rapid ore noi.', ${username}, 'Angajat')}"></header>
+<header th:replace="~{fragments :: hero('Pontajul tău', 'Vezi ce ai lucrat și adaugă rapid ore noi.', ${username}, 'Angajat', null)}"></header>
 
 <main>
     <div class="stats">
@@ -45,7 +45,7 @@
                             <th>Client</th>
                             <th>Luna</th>
                             <th>Durată</th>
-                            <th>Acțiuni</th>
+                            <th>Sarcină</th>
                             <th>Notă</th>
                         </tr>
                     </thead>
@@ -60,7 +60,7 @@
                             <td class="num" th:text="|${entry.totalMinutes() / 60}h ${entry.totalMinutes() % 60}m|"></td>
                             <td>
                                 <span class="muted" th:if="${#lists.isEmpty(entry.actions())}">—</span>
-                                <span class="pill" th:each="a : ${entry.actions()}" th:text="${a}"></span>
+                                <span th:each="a : ${entry.actions()}" th:text="${a}"></span>
                             </td>
                             <td class="muted" th:text="${entry.extranote() == null or entry.extranote() == ''} ? '—' : ${entry.extranote()}"></td>
                         </tr>
@@ -89,6 +89,16 @@
                                 <option value="">Fără client</option>
                                 <option th:each="c : ${clients}" th:value="${c.id()}" th:text="${c.name()}"></option>
                             </select>
+                        </div>
+                        <div class="field full">
+                            <label for="task">Sarcină</label>
+                            <select class="input" id="task" required>
+                                <option value="" selected disabled>Alege sarcina</option>
+                                <optgroup th:each="group : ${taskGroups}" th:label="${group.key}">
+                                    <option th:each="t : ${group.value}" th:value="${t}" th:text="${t}"></option>
+                                </optgroup>
+                            </select>
+                            <span class="hint">O sarcină pe pontaj. Pentru mai multe sarcini, adaugă pontaje separate.</span>
                         </div>
                         <div class="field full">
                             <label>Durată</label>
@@ -136,7 +146,7 @@
                 clientId: client ? Number(client) : null,
                 workingmonth: monthSelect.value,
                 totalMinutes: total,
-                actions: [],
+                actions: [document.getElementById('task').value],
                 extranote: document.getElementById('extranote').value
             };
         },

@@ -3,6 +3,7 @@ package timesheet_management_system.service;
 import timesheet_management_system.dto.TimesheetEntryDto;
 import timesheet_management_system.exception.BadRequestException;
 import timesheet_management_system.exception.ResourceNotFoundException;
+import timesheet_management_system.model.ActionCatalog;
 import timesheet_management_system.model.Client;
 import timesheet_management_system.model.Employee;
 import timesheet_management_system.model.Role;
@@ -22,12 +23,15 @@ public class TimesheetEntryService {
     private final TimesheetEntryRepository timesheetEntryRepository;
     private final EmployeeRepository employeeRepository;
     private final ClientRepository clientRepository;
+    private final ActionCatalog actionCatalog;
 
     public TimesheetEntryService(TimesheetEntryRepository timesheetEntryRepository,
-         EmployeeRepository employeeRepository, ClientRepository clientRepository) {
+         EmployeeRepository employeeRepository, ClientRepository clientRepository,
+         ActionCatalog actionCatalog) {
         this.timesheetEntryRepository = timesheetEntryRepository;
         this.employeeRepository = employeeRepository;
         this.clientRepository = clientRepository;
+        this.actionCatalog = actionCatalog;
     }
 
     public List<TimesheetEntryDto> findAll() {
@@ -53,8 +57,22 @@ public class TimesheetEntryService {
             .orElseThrow(() -> new RuntimeException("Employee not found for username: " + currentUsername));
     }
 
+    private void validateTask(List<String> actions) {
+        if (actions == null || actions.isEmpty()) {
+            return;
+        }
+        if (actions.size() > 1) {
+            throw new BadRequestException("Alege o singură sarcină pe pontaj. Pentru mai multe sarcini, adaugă pontaje separate.");
+        }
+        String task = actions.get(0);
+        if (task == null || !actionCatalog.contains(task)) {
+            throw new BadRequestException("Sarcina aleasă nu există în listă.");
+        }
+    }
+
     public TimesheetEntryDto save(TimesheetEntryDto dto) {
         Employee currentEmployee = getCurrentEmployee();
+        validateTask(dto.actions());
 
         Long effectiveEmployeeId;
         if (currentEmployee.getRole() == Role.ADMIN) {

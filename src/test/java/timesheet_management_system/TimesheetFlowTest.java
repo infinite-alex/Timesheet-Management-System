@@ -160,6 +160,24 @@ class TimesheetFlowTest extends IntegrationTestBase {
     }
 
     @Test
+    void timesheetPage_offersTheTaskCatalogGroupedByCategory() throws Exception {
+        String page = body("/pontaj", asWorker());
+
+        assertThat(page).contains("<optgroup label=\"Declaratii fiscale\">").contains("Decont TVA (D300)")
+            .contains("<optgroup label=\"Administrativ / non-facturabil\">").contains("Alege sarcina");
+    }
+
+    @Test
+    void savedTask_isShownOnBothPages() throws Exception {
+        postJson("/api/timesheet-entries",
+            "{\"date\":\"2026-09-01\",\"workingmonth\":\"SEPTEMBRIE\",\"totalMinutes\":30,\"actions\":[\"Fluturasi\"]}", asWorker())
+            .andExpect(status().isOk());
+
+        assertThat(body("/pontaj", asWorker())).contains("Fluturasi");
+        assertThat(body("/admin", asAdmin())).contains("Fluturasi");
+    }
+
+    @Test
     void htmlInUserData_isEscapedOnEveryPage() throws Exception {
         String payload = "<script>alert('xss')</script>";
         Client evil = client(payload);

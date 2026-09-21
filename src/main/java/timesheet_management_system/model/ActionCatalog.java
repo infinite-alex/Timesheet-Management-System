@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class ActionCatalog {
 
     private final Map<String, List<String>> actionsByCategory = new LinkedHashMap<>();
@@ -94,6 +98,25 @@ public class ActionCatalog {
 
     public List<String> getActions(String category) {
         return actionsByCategory.getOrDefault(category, new ArrayList<>());
+    }
+
+    public Map<String, List<String>> getGroups() {
+        Map<String, List<String>> copy = new LinkedHashMap<>();
+        actionsByCategory.forEach((category, actions) -> copy.put(category, new ArrayList<>(actions)));
+        return copy;
+    }
+
+    public boolean contains(String action) {
+        return categoryOf(action).isPresent();
+    }
+
+    public Optional<String> categoryOf(String action) {
+        for (Map.Entry<String, List<String>> entry : actionsByCategory.entrySet()) {
+            if (entry.getValue().contains(action)) {
+                return Optional.of(entry.getKey());
+            }
+        }
+        return Optional.empty();
     }
 
     public List<String> getAllActions() {

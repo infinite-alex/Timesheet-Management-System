@@ -98,6 +98,34 @@ class ValidationTest extends IntegrationTestBase {
             .andExpect(status().isOk()).andExpect(jsonPath("$.actions.length()").value(0));
     }
 
+    private String entryWithActions(String actionsJson) {
+        return "{\"date\":\"2026-09-01\",\"workingmonth\":\"SEPTEMBRIE\",\"totalMinutes\":60,\"actions\":" + actionsJson + "}";
+    }
+
+    @Test
+    void oneTaskFromTheCatalog_isAccepted_andReturned() throws Exception {
+        postJson(ENTRY, entryWithActions("[\"Inchidere luna\"]"), asWorker())
+            .andExpect(status().isOk()).andExpect(jsonPath("$.actions[0]").value("Inchidere luna"))
+            .andExpect(jsonPath("$.actions.length()").value(1));
+    }
+
+    @Test
+    void moreThanOneTask_isRejected() throws Exception {
+        postJson(ENTRY, entryWithActions("[\"Inchidere luna\",\"Nota contabila\"]"), asWorker())
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value(containsString("o singură sarcină")));
+        assertThat(entries.findByEmployee(worker)).isEmpty();
+    }
+
+    @Test
+    void aTaskOutsideTheCatalog_isRejected() throws Exception {
+        for (String bad : new String[] {"[\"Sarcina inventata\"]", "[\"\"]", "[null]", "[\"inchidere luna\"]",
+                "[\"<script>alert(1)</script>\"]"}) {
+            postJson(ENTRY, entryWithActions(bad), asWorker())
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.error").value("Sarcina aleasă nu există în listă."));
+        }
+        assertThat(entries.findByEmployee(worker)).isEmpty();
+    }
+
     @Test
     void severalProblemsAtOnce_areAllReportedByField() throws Exception {
         postJson(ENTRY, entryJson(null, null, null, null, 0, ""), asWorker())

@@ -26,6 +26,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import timesheet_management_system.dto.TimesheetEntryDto;
 import timesheet_management_system.exception.BadRequestException;
 import timesheet_management_system.exception.ResourceNotFoundException;
+import timesheet_management_system.model.ActionCatalog;
 import timesheet_management_system.model.Client;
 import timesheet_management_system.model.Employee;
 import timesheet_management_system.model.Role;
@@ -49,7 +50,7 @@ class TimesheetEntryServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new TimesheetEntryService(entryRepository, employeeRepository, clientRepository);
+        service = new TimesheetEntryService(entryRepository, employeeRepository, clientRepository, new ActionCatalog());
         admin = employee(1L, "boss", Role.ADMIN);
         worker = employee(2L, "worker", Role.ANGAJAT);
         other = employee(3L, "other", Role.ANGAJAT);
@@ -211,17 +212,49 @@ class TimesheetEntryServiceTest {
     }
 
     @Test
+    void save_withMoreThanOneTask_isABadRequest() {
+        loginAs(worker);
+        TimesheetEntryDto input = new TimesheetEntryDto(null, LocalDate.of(2026, 9, 1), null, null,
+            WorkingMonth.SEPTEMBRIE, 60, List.of("Inchidere luna", "Nota contabila"), "", null, null);
+
+        assertThatThrownBy(() -> service.save(input)).isInstanceOf(BadRequestException.class)
+            .hasMessageContaining("o singură sarcină");
+        verify(entryRepository, never()).save(any());
+    }
+
+    @Test
+    void save_withATaskOutsideTheCatalog_isABadRequest() {
+        loginAs(worker);
+        TimesheetEntryDto input = new TimesheetEntryDto(null, LocalDate.of(2026, 9, 1), null, null,
+            WorkingMonth.SEPTEMBRIE, 60, List.of("Sarcina inventata"), "", null, null);
+
+        assertThatThrownBy(() -> service.save(input)).isInstanceOf(BadRequestException.class);
+        verify(entryRepository, never()).save(any());
+    }
+
+    @Test
+    void save_withoutATask_isAllowed() {
+        loginAs(worker);
+        when(employeeRepository.findById(2L)).thenReturn(Optional.of(worker));
+        when(entryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        TimesheetEntryDto result = service.save(dto(null, null, 60));
+
+        assertThat(result.actions()).isEmpty();
+    }
+
+    @Test
     void save_keepsActionsAndNoteAndMonth() {
         loginAs(worker);
         when(employeeRepository.findById(2L)).thenReturn(Optional.of(worker));
         when(entryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-        List<String> actions = new ArrayList<>(List.of("Salarii", "TVA"));
+        List<String> actions = new ArrayList<>(List.of("Inchidere luna"));
         TimesheetEntryDto input = new TimesheetEntryDto(null, LocalDate.of(2026, 1, 31), null, null,
             WorkingMonth.IANUARIE, 90, actions, "detalii", null, null);
 
         TimesheetEntryDto result = service.save(input);
 
-        assertThat(result.actions()).containsExactly("Salarii", "TVA");
+        assertThat(result.actions()).containsExactly("Inchidere luna");
         assertThat(result.extranote()).isEqualTo("detalii");
         assertThat(result.workingmonth()).isEqualTo(WorkingMonth.IANUARIE);
         assertThat(result.date()).isEqualTo(LocalDate.of(2026, 1, 31));

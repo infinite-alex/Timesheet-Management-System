@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('Administrare')}"></head>
 <body>
-<header th:replace="~{fragments :: hero('Panou de administrare', 'Pontajele echipei, angajații și clienții, într-un singur loc.', ${username}, 'Administrator')}"></header>
+<header th:replace="~{fragments :: hero('Panou de administrare', 'Pontajele echipei, angajații și clienții, într-un singur loc.', ${username}, 'Administrator', 'admin')}"></header>
 
 <main>
     <div class="stats">
@@ -35,7 +35,7 @@
 
         <div class="panel active" data-panel="pontaje">
             <div class="card-head" style="border-bottom:0;padding-bottom:0">
-                <input class="search" type="search" placeholder="Caută după angajat, client, lună" data-filter="#entriesTable" />
+                <input class="search" type="search" placeholder="Caută după angajat, client, sarcină" data-filter="#entriesTable" />
             </div>
             <div class="empty" th:if="${#lists.isEmpty(entries)}">
                 <h3>Niciun pontaj încă</h3>
@@ -50,6 +50,7 @@
                             <th>Client</th>
                             <th>Luna</th>
                             <th>Durată</th>
+                            <th>Sarcină</th>
                             <th>Notă</th>
                         </tr>
                     </thead>
@@ -68,6 +69,10 @@
                             </td>
                             <td><span class="pill pill-brand" th:text="${#strings.capitalize(#strings.toLowerCase(entry.workingmonth()))}"></span></td>
                             <td class="num" th:text="|${entry.totalMinutes() / 60}h ${entry.totalMinutes() % 60}m|"></td>
+                            <td>
+                                <span class="muted" th:if="${#lists.isEmpty(entry.actions())}">—</span>
+                                <span th:each="a : ${entry.actions()}" th:text="${a}"></span>
+                            </td>
                             <td class="muted" th:text="${entry.extranote() == null or entry.extranote() == ''} ? '—' : ${entry.extranote()}"></td>
                         </tr>
                     </tbody>

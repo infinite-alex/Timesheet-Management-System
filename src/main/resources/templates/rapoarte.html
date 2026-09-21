@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Rapoarte')}"></head>
+<body>
+<header th:replace="~{fragments :: hero('Rapoarte', 'Cine a lucrat cât, pe angajați, pe clienți și pe sarcini.', ${username}, 'Administrator', 'rapoarte')}"></header>
+
+<main>
+    <form method="get" th:action="@{/rapoarte}" id="reportForm">
+        <div class="card filters">
+            <div class="card-head">
+                <div class="tabs">
+                    <button type="submit" name="view" th:each="v : ${views}" th:value="${v.slug()}"
+                            class="tab" th:classappend="${v == view} ? 'active'" th:text="${v.title()}">Vedere</button>
+                </div>
+                <a class="btn btn-primary" id="exportLink" th:href="@{/rapoarte/export.csv}">Descarcă CSV</a>
+            </div>
+
+            <div class="card-body">
+                <div class="form-grid filter-grid">
+                    <div class="field">
+                        <label for="period">Perioadă</label>
+                        <select class="input" id="period" name="period">
+                            <option value="luna" th:selected="${period == 'luna'}">Luna aceasta</option>
+                            <option value="luna-trecuta" th:selected="${period == 'luna-trecuta'}">Luna trecută</option>
+                            <option value="an" th:selected="${period == 'an'}">Anul acesta</option>
+                            <option value="tot" th:selected="${period == 'tot'}">Tot istoricul</option>
+                            <option value="interval" th:selected="${period == 'interval'}">Interval ales</option>
+                        </select>
+                    </div>
+                    <div class="field" id="rangeFields" th:hidden="${period != 'interval'}">
+                        <label>Interval</label>
+                        <div class="duration">
+                            <input class="input" type="date" name="from" th:value="${from}" aria-label="De la" />
+                            <input class="input" type="date" name="to" th:value="${to}" aria-label="Până la" />
+                        </div>
+                    </div>
+                    <div class="field" th:hidden="${view.slug() != 'sarcini'}" id="taskField">
+                        <label for="task">Sarcină</label>
+                        <select class="input" id="task" name="task">
+                            <option value="">Toate sarcinile</option>
+                            <option value="-" th:selected="${task == '-'}">Fără sarcină</option>
+                            <optgroup th:each="group : ${taskGroups}" th:label="${group.key}">
+                                <option th:each="t : ${group.value}" th:value="${t}" th:text="${t}" th:selected="${t == task}"></option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chip-block">
+                    <div class="chip-title">Clienți <span class="hint">(nimic bifat = toți)</span></div>
+                    <div class="chips">
+                        <label class="chip"><input type="checkbox" name="clientId" value="0" th:checked="${#lists.contains(selectedClients, 0L)}"><span>Fără client</span></label>
+                        <label class="chip" th:each="c : ${clients}"><input type="checkbox" name="clientId" th:value="${c.id()}" th:checked="${#lists.contains(selectedClients, c.id())}"><span th:text="${c.name()}"></span></label>
+                    </div>
+                </div>
+
+                <div class="chip-block">
+                    <div class="chip-title">Angajați <span class="hint">(nimic bifat = toți)</span></div>
+                    <div class="chips">
+                        <label class="chip" th:each="e : ${employees}"><input type="checkbox" name="employeeId" th:value="${e.id()}" th:checked="${#lists.contains(selectedEmployees, e.id())}"><span th:text="${e.name()}"></span></label>
+                    </div>
+                </div>
+
+                <div class="form-actions" style="justify-content:flex-start">
+                    <button type="submit" name="view" th:value="${view.slug()}" class="btn btn-primary">Afișează raportul</button>
+                    <a class="btn" style="background:var(--bg);color:var(--ink-soft)" th:href="@{/rapoarte(view=${view.slug()})}">Resetează filtrele</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="alert alert-error" th:if="${error}" th:text="${error}" style="margin-top:20px">Eroare</div>
+
+    <div class="stats" style="margin-top:24px">
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+            <div><div class="stat-label">Total ore</div><div class="stat-value" th:text="${report.duration()}">0h 0m</div></div>
+        </div>
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span>
+            <div><div class="stat-label">Pontaje</div><div class="stat-value" th:text="${report.totalEntries()}">0</div></div>
+        </div>
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg></span>
+            <div><div class="stat-label" th:text="${view.slug() == 'clienti' ? 'Clienți' : (view.slug() == 'sarcini' ? 'Sarcini' : 'Angajați')}">Grupuri</div><div class="stat-value" th:text="${#lists.size(report.groups())}">0</div></div>
+        </div>
+    </div>
+
+    <div class="card" th:if="${#lists.isEmpty(report.groups())}">
+        <div class="empty">
+            <h3>Nu există date pentru filtrele alese</h3>
+            <p>Încearcă altă perioadă sau scoate din filtre.</p>
+        </div>
+    </div>
+
+    <div class="card report-group" th:each="g : ${report.groups()}">
+        <div class="card-head">
+            <div>
+                <h2 th:text="${g.label()}">Grup</h2>
+                <p th:if="${g.note() != null}" th:text="${g.note()}">Categorie</p>
+            </div>
+            <div class="group-total">
+                <strong th:text="${g.duration()}">0h 0m</strong>
+                <span class="muted" th:text="|${report.share(g.minutes())}% din total · ${g.entries()} pontaje|">0%</span>
+            </div>
+        </div>
+        <div class="bar"><span th:style="|width:${report.share(g.minutes())}%|"></span></div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="${view.slug() == 'angajati' ? 'Client' : 'Angajat'}">Detaliu</th>
+                        <th>Durată</th>
+                        <th>Pontaje</th>
+                        <th style="width:30%">Pondere în grup</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="l : ${g.lines()}">
+                        <td th:text="${l.label()}" style="font-weight:600"></td>
+                        <td class="num" th:text="${l.duration()}"></td>
+                        <td class="num" th:text="${l.entries()}"></td>
+                        <td>
+                            <div class="bar small"><span th:style="|width:${g.minutes() == 0 ? 0 : l.minutes() * 100 / g.minutes()}%|"></span></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script th:src="@{/js/app.js}"></script>
+<script>
+    var period = document.getElementById('period');
+    var rangeFields = document.getElementById('rangeFields');
+    period.addEventListener('change', function () { rangeFields.hidden = period.value !== 'interval'; });
+
+    var form = document.getElementById('reportForm');
+    var exportLink = document.getElementById('exportLink');
+    function currentView() {
+        var active = document.querySelector('.tab.active');
+        return active ? active.value : 'angajati';
+    }
+    function refreshExport() {
+        var params = new URLSearchParams(new FormData(form));
+        params.set('view', currentView());
+        exportLink.href = '/rapoarte/export.csv?' + params.toString();
+    }
+    form.addEventListener('change', refreshExport);
+    refreshExport();
+</script>
+</body>
+</html>

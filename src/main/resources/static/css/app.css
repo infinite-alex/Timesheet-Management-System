@@ -358,3 +358,30 @@ textarea.input { resize: vertical; min-height: 88px; }
     .card-head, .card-body { padding-left: 16px; padding-right: 16px; }
     .search { min-width: 0; width: 100%; }
 }
+
+.nav-links { display: flex; gap: 4px; margin-right: 6px; }
+.nav-link { color: #b6c4cb; text-decoration: none; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 10px; transition: background 0.15s ease, color 0.15s ease; }
+.nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.nav-link.active { color: #fff; background: rgba(16, 185, 129, 0.22); }
+
+.filters .card-body { padding-top: 20px; }
+.filter-grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); align-items: end; }
+.chip-block { margin-top: 20px; }
+.chip-title { font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-bottom: 10px; }
+.chip-title .hint { font-weight: 400; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; max-height: 148px; overflow-y: auto; padding: 2px; }
+.chip { cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span { display: inline-block; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: #f8fafb; font-size: 13px; font-weight: 500; color: var(--ink-soft); transition: all 0.12s ease; }
+.chip:hover span { border-color: #cbd5e1; }
+.chip input:checked + span { background: var(--brand-100); border-color: var(--brand); color: var(--brand-700); font-weight: 600; }
+.chip input:focus-visible + span { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+
+.report-group { margin-top: 20px; }
+.group-total { text-align: right; display: flex; flex-direction: column; }
+.group-total strong { font-size: 22px; letter-spacing: -0.3px; }
+.group-total .muted { font-size: 12px; }
+.bar { height: 6px; background: var(--line); }
+.bar span { display: block; height: 100%; background: var(--brand); }
+.bar.small { height: 8px; border-radius: 999px; overflow: hidden; }
+a.btn { text-decoration: none; display: inline-block; }

@@ -11,7 +11,7 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
-<header class="hero" th:fragment="hero(title, subtitle, username, role)">
+<header class="hero" th:fragment="hero(title, subtitle, username, role, active)">
     <div class="hero-inner">
         <nav class="nav">
             <div class="brand">
@@ -21,6 +21,10 @@
                 <span>Pontaj</span>
             </div>
             <div class="nav-right">
+                <div class="nav-links" th:if="${role == 'Administrator'}">
+                    <a th:href="@{/admin}" class="nav-link" th:classappend="${active == 'admin'} ? 'active'">Panou</a>
+                    <a th:href="@{/rapoarte}" class="nav-link" th:classappend="${active == 'rapoarte'} ? 'active'">Rapoarte</a>
+                </div>
                 <div class="user-chip">
                     <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(username, 0, 1))}">A</span>
                     <div>
