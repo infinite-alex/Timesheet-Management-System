@@ -1,111 +1,50 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <style>
-        :root {
-            --red: #d62828;
-            --red-dark: #a51d1d;
-            --black: #161616;
-            --gray: #f4f4f4;
-            --gray-border: #e0e0e0;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
-            background: var(--black);
-            color: var(--black);
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 360px;
-            background: #fff;
-            border-radius: 10px;
-            padding: 36px 32px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-            border-top: 4px solid var(--red);
-        }
-
-        h1 {
-            margin: 0 0 28px;
-            font-size: 24px;
-            letter-spacing: 1px;
-        }
-
-        form div {
-            margin-bottom: 18px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #444;
-        }
-
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 11px 12px;
-            border: 1px solid var(--gray-border);
-            border-radius: 6px;
-            font-size: 14px;
-            background: var(--gray);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--red);
-            box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.15);
-            background: #fff;
-        }
-
-        button[type="submit"] {
-            width: 100%;
-            background: var(--red);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 6px;
-            transition: background 0.15s ease;
-        }
-
-        button[type="submit"]:hover {
-            background: var(--red-dark);
-        }
-    </style>
-</head>
+<head th:replace="~{fragments :: head('Autentificare')}"></head>
 <body>
-    <div class="login-card">
-        <h1>Autentificare</h1>
-        <form th:action="@{/login}" method="post">
-            <div>
-                <label>Username</label>
-                <input type="text" name="username" />
-            </div>
-            <div>
-                <label>Parolă</label>
-                <input type="password" name="password" />
-            </div>
-            <button type="submit">Login</button>
-        </form>
-    </div>
+<div class="auth">
+    <section class="auth-side">
+        <div class="brand">
+            <span class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            </span>
+            <span>Pontaj</span>
+        </div>
+
+        <div>
+            <h1>Evidența orelor, <span>simplă și clară.</span></h1>
+            <p class="lead">Înregistrează timpul lucrat pe fiecare client și urmărește totul într-un singur loc.</p>
+            <ul class="points">
+                <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></i>Pontaj rapid, în câteva secunde</li>
+                <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></i>Ore grupate pe clienți și pe luni</li>
+                <li><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg></i>Vedere completă pentru administrator</li>
+            </ul>
+        </div>
+
+        <div class="auth-foot">Timesheet Management System</div>
+    </section>
+
+    <section class="auth-main">
+        <div class="auth-card">
+            <h2>Bine ai revenit</h2>
+            <p class="sub">Intră în cont ca să continui.</p>
+
+            <div class="alert alert-error" th:if="${param.error}">Username sau parolă greșite. Încearcă din nou.</div>
+            <div class="alert alert-ok" th:if="${param.logout}">Te-ai deconectat.</div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input class="input" type="text" id="username" name="username" autocomplete="username" autofocus required />
+                </div>
+                <div class="field">
+                    <label for="password">Parolă</label>
+                    <input class="input" type="password" id="password" name="password" autocomplete="current-password" required />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Intră în cont</button>
+            </form>
+        </div>
+    </section>
+</div>
 </body>
 </html>

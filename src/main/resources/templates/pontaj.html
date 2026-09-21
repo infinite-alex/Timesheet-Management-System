@@ -1,282 +1,148 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Pontaj</title>
-    <style>
-        :root {
-            --red: #d62828;
-            --red-dark: #a51d1d;
-            --black: #161616;
-            --gray: #f4f4f4;
-            --gray-border: #e0e0e0;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Segoe UI", Roboto, Arial, sans-serif;
-            background: var(--gray);
-            color: var(--black);
-        }
-
-        header {
-            background: var(--black);
-            padding: 24px 40px;
-            border-bottom: 4px solid var(--red);
-        }
-
-        header h1 {
-            margin: 0;
-            color: #fff;
-            font-size: 28px;
-            letter-spacing: 1px;
-        }
-
-        main {
-            max-width: 900px;
-            margin: 32px auto;
-            padding: 0 20px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 0;
-        }
-
-        .tab-button {
-            flex: 1;
-            padding: 14px 20px;
-            border: none;
-            background: #2a2a2a;
-            color: #ccc;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 8px 8px 0 0;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-
-        .tab-button:hover {
-            background: #3a3a3a;
-            color: #fff;
-        }
-
-        .tab-button.active {
-            background: var(--red);
-            color: #fff;
-        }
-
-        .tab-content {
-            display: none;
-            background: #fff;
-            border-radius: 0 0 10px 10px;
-            padding: 28px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead th {
-            background: var(--black);
-            color: #fff;
-            text-align: left;
-            padding: 12px 14px;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        thead th:first-child {
-            border-radius: 6px 0 0 0;
-        }
-
-        thead th:last-child {
-            border-radius: 0 6px 0 0;
-        }
-
-        tbody td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--gray-border);
-            font-size: 14px;
-        }
-
-        tbody tr:hover {
-            background: #fdecea;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        h2 {
-            margin-top: 0;
-            font-size: 18px;
-            color: var(--black);
-            border-left: 4px solid var(--red);
-            padding-left: 10px;
-        }
-
-        form div {
-            margin-bottom: 16px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #444;
-        }
-
-        input[type="text"],
-        input[type="date"],
-        input[type="number"] {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--gray-border);
-            border-radius: 6px;
-            font-size: 14px;
-            background: var(--gray);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--red);
-            box-shadow: 0 0 0 3px rgba(214, 40, 40, 0.15);
-            background: #fff;
-        }
-
-        button[type="submit"] {
-            background: var(--red);
-            color: #fff;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
-
-        button[type="submit"]:hover {
-            background: var(--red-dark);
-        }
-    </style>
-</head>
+<head th:replace="~{fragments :: head('Pontaj')}"></head>
 <body>
-    <header>
-        <h1>Pontaj</h1>
-    </header>
+<header th:replace="~{fragments :: hero('Pontajul tău', 'Vezi ce ai lucrat și adaugă rapid ore noi.', ${username}, 'Angajat')}"></header>
 
-    <main>
-        <div class="tabs">
-            <button type="button" class="tab-button active" data-tab="view">Vezi pontaje</button>
-            <button type="button" class="tab-button" data-tab="add">Adaugă pontaj</button>
+<main>
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+            <div><div class="stat-label">Total ore</div><div class="stat-value" th:text="|${totalMinutes / 60}h ${totalMinutes % 60}m|">0h 0m</div></div>
+        </div>
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg></span>
+            <div><div class="stat-label">Înregistrări</div><div class="stat-value" th:text="${#lists.size(entries)}">0</div></div>
+        </div>
+        <div class="stat">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1M14 9h1M9 13h1M14 13h1"/></svg></span>
+            <div><div class="stat-label">Clienți lucrați</div><div class="stat-value" th:text="${clientCount}">0</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <div class="tabs">
+                <button type="button" class="tab active" data-tab="lista">Pontajele mele <span class="count" th:text="${#lists.size(entries)}">0</span></button>
+                <button type="button" class="tab" data-tab="adauga">Adaugă pontaj</button>
+            </div>
+            <input class="search" type="search" placeholder="Caută în pontaje" data-filter="#entriesTable" data-show-on="lista" />
         </div>
 
-        <div id="tab-view" class="tab-content active">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Client (id)</th>
-                        <th>Lună</th>
-                        <th>Minute</th>
-                        <th>Acțiuni</th>
-                        <th>Notă</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="entry : ${entries}">
-                        <td th:text="${entry.date()}"></td>
-                        <td th:text="${entry.clientId()}"></td>
-                        <td th:text="${entry.workingmonth()}"></td>
-                        <td th:text="${entry.totalMinutes()}"></td>
-                        <td th:text="${entry.actions()}"></td>
-                        <td th:text="${entry.extranote()}"></td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="panel active" data-panel="lista">
+            <div class="empty" th:if="${#lists.isEmpty(entries)}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+                <h3>Niciun pontaj încă</h3>
+                <p>Adaugă prima înregistrare și o vei vedea aici.</p>
+                <button type="button" class="btn btn-primary" data-goto="adauga">Adaugă primul pontaj</button>
+            </div>
+
+            <div class="table-wrap" th:unless="${#lists.isEmpty(entries)}">
+                <table id="entriesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Client</th>
+                            <th>Luna</th>
+                            <th>Durată</th>
+                            <th>Acțiuni</th>
+                            <th>Notă</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="entry : ${entries}">
+                            <td class="num" th:text="|${#numbers.formatInteger(entry.date().dayOfMonth, 2)}.${#numbers.formatInteger(entry.date().monthValue, 2)}.${entry.date().year}|"></td>
+                            <td>
+                                <span th:if="${entry.clientName() != null}" th:text="${entry.clientName()}" style="font-weight:600"></span>
+                                <span th:if="${entry.clientName() == null}" class="muted">Fără client</span>
+                            </td>
+                            <td><span class="pill pill-brand" th:text="${#strings.capitalize(#strings.toLowerCase(entry.workingmonth()))}"></span></td>
+                            <td class="num" th:text="|${entry.totalMinutes() / 60}h ${entry.totalMinutes() % 60}m|"></td>
+                            <td>
+                                <span class="muted" th:if="${#lists.isEmpty(entry.actions())}">—</span>
+                                <span class="pill" th:each="a : ${entry.actions()}" th:text="${a}"></span>
+                            </td>
+                            <td class="muted" th:text="${entry.extranote() == null or entry.extranote() == ''} ? '—' : ${entry.extranote()}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div id="tab-add" class="tab-content">
-            <h2>Adaugă pontaj nou</h2>
-            <form id="entryForm">
-                <div>
-                    <label>Data (YYYY-MM-DD)</label>
-                    <input type="date" id="date" required />
-                </div>
-                <div>
-                    <label>Client ID (opțional)</label>
-                    <input type="number" id="clientId" />
-                </div>
-                <div>
-                    <label>Lună (ex: IANUARIE)</label>
-                    <input type="text" id="workingmonth" required />
-                </div>
-                <div>
-                    <label>Total minute</label>
-                    <input type="number" id="totalMinutes" required />
-                </div>
-                <div>
-                    <label>Notă</label>
-                    <input type="text" id="extranote" />
-                </div>
-                <button type="submit">Salvează</button>
-            </form>
+        <div class="panel" data-panel="adauga">
+            <div class="card-body">
+                <form id="entryForm">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="date">Data</label>
+                            <input class="input" type="date" id="date" required />
+                        </div>
+                        <div class="field">
+                            <label for="workingmonth">Luna de lucru</label>
+                            <select class="input" id="workingmonth" required>
+                                <option th:each="m : ${months}" th:value="${m}" th:text="${#strings.capitalize(#strings.toLowerCase(m))}"></option>
+                            </select>
+                        </div>
+                        <div class="field full">
+                            <label for="clientId">Client</label>
+                            <select class="input" id="clientId">
+                                <option value="">Fără client</option>
+                                <option th:each="c : ${clients}" th:value="${c.id()}" th:text="${c.name()}"></option>
+                            </select>
+                        </div>
+                        <div class="field full">
+                            <label>Durată</label>
+                            <div class="duration">
+                                <div class="suffix"><input class="input" type="number" id="hours" min="0" max="24" value="0" /><span>ore</span></div>
+                                <div class="suffix"><input class="input" type="number" id="minutes" min="0" max="59" value="0" /><span>min</span></div>
+                            </div>
+                        </div>
+                        <div class="field full">
+                            <label for="extranote">Notă</label>
+                            <textarea class="input" id="extranote" placeholder="Detalii despre ce ai lucrat (opțional)"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn" style="background:var(--bg);color:var(--ink-soft)" data-goto="lista">Renunță</button>
+                        <button type="submit" class="btn btn-primary" id="saveBtn">Salvează pontajul</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </main>
+    </div>
+</main>
 
-    <script th:inline="javascript">
-        document.querySelectorAll('.tab-button').forEach(function (button) {
-            button.addEventListener('click', function () {
-                document.querySelectorAll('.tab-button').forEach(function (b) { b.classList.remove('active'); });
-                document.querySelectorAll('.tab-content').forEach(function (c) { c.classList.remove('active'); });
-                button.classList.add('active');
-                document.getElementById('tab-' + button.dataset.tab).classList.add('active');
-            });
-        });
+<script th:src="@{/js/app.js}"></script>
+<script>
+    var dateInput = document.getElementById('date');
+    var monthSelect = document.getElementById('workingmonth');
+    var today = new Date();
+    dateInput.value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    monthSelect.selectedIndex = today.getMonth();
+    dateInput.addEventListener('change', function () {
+        if (dateInput.value) monthSelect.selectedIndex = Number(dateInput.value.split('-')[1]) - 1;
+    });
 
-        document.getElementById('entryForm').addEventListener('submit', function (event) {
-            event.preventDefault();
-
-            var clientIdValue = document.getElementById('clientId').value;
-
-            var payload = {
-                date: document.getElementById('date').value,
+    submitForm(
+        document.getElementById('entryForm'),
+        document.getElementById('saveBtn'),
+        function () {
+            var total = Number(document.getElementById('hours').value || 0) * 60 + Number(document.getElementById('minutes').value || 0);
+            if (total <= 0) { toast('Introdu o durată mai mare de zero.', 'error'); return null; }
+            var client = document.getElementById('clientId').value;
+            return {
+                date: dateInput.value,
                 employeeId: null,
-                clientId: clientIdValue ? Number(clientIdValue) : null,
-                workingmonth: document.getElementById('workingmonth').value.toUpperCase(),
-                totalMinutes: Number(document.getElementById('totalMinutes').value),
+                clientId: client ? Number(client) : null,
+                workingmonth: monthSelect.value,
+                totalMinutes: total,
                 actions: [],
                 extranote: document.getElementById('extranote').value
             };
-
-            fetch('/api/timesheet-entries', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(function (response) {
-                if (response.ok) {
-                    window.location.reload();
-                } else {
-                    alert('Eroare la salvare: ' + response.status);
-                }
-            });
-        });
-    </script>
+        },
+        '/api/timesheet-entries',
+        function () { location.hash = 'lista'; location.reload(); }
+    );
+</script>
 </body>
 </html>

@@ -19,8 +19,10 @@ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Excepti
     http
         .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/login").permitAll()
+            .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+            .requestMatchers("/admin").hasRole("ADMIN")
             .requestMatchers(HttpMethod.POST, "/api/employees").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.POST, "/api/clients").hasRole("ADMIN")
             .anyRequest().authenticated()
         )
         .formLogin(form -> form

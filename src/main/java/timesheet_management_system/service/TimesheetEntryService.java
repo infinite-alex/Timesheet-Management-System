@@ -69,7 +69,9 @@ public class TimesheetEntryService {
             dto.workingmonth(),
             dto.totalMinutes(),
             dto.actions(),
-            dto.extranote()
+            dto.extranote(),
+            null,
+            null
         );
 
         TimesheetEntry saved = timesheetEntryRepository.save(toEntity(effectiveDto));
@@ -77,10 +79,13 @@ public class TimesheetEntryService {
     }
     private TimesheetEntryDto toDto(TimesheetEntry entry) {
         Long clientId;
+        String clientName;
         if (entry.getClient() != null) {
             clientId = entry.getClient().getId();
+            clientName = entry.getClient().getName();
         } else {
             clientId = null;
+            clientName = null;
         }
         return new TimesheetEntryDto(
             entry.getId(),
@@ -90,7 +95,9 @@ public class TimesheetEntryService {
             entry.getWorkingMonth(),
             entry.getTotalMinutes(),
             entry.getActions(),
-            entry.getExtraNote()
+            entry.getExtraNote(),
+            entry.getEmployee().getName(),
+            clientName
         );
     }
     private TimesheetEntry toEntity(TimesheetEntryDto dto) {
