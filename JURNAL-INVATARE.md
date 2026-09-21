@@ -57,3 +57,31 @@ Am construit stratul de API REST peste entitățile JPA existente (`Client`, `Em
 - Am încercat să adaug un pontaj cu un `Client ID` ales la întâmplare (4), fără să știu că tabela `client` era complet goală — de aici eroarea 500.
 
 ---
+
+## 2026-09-21 — Aplicația devine sigură pentru folosit zilnic (cu asistență Claude Code)
+
+**Ce s-a făcut:**
+- Între 14 și 21 septembrie am adăugat: înregistrare liberă, validare + erori clare, o suită de teste automate pe H2, sarcini pe pontaje, rapoarte pentru admin (pe angajați / clienți / sarcini, cu export CSV), editare și ștergere de pontaje și angajați, pagina „Contul meu”. Toate sunt deja pe GitHub (`main` = `origin/main`).
+- Astăzi: **blocare după parole greșite** (login și înregistrare), **editare și ștergere de clienți**, **backup automat** al bazei (`pg_dump`), **pornire automată** la boot și `show-sql` oprit. `PROJECT-STATUS.md` și `README.md` sunt puse la zi.
+
+**De ce așa:**
+- **Blocarea se face înainte de verificarea parolei**, într-un filtru pe `POST /login`. Dacă ar fi în `UserDetailsService`, `DaoAuthenticationProvider` ar împacheta excepția într-o eroare internă și nu s-ar mai vedea mesajul „prea multe încercări”. Cu filtrul, și parola corectă e refuzată cât timp contul e blocat, deci nu se poate ghici parola „pe gustate” în timpul blocării.
+- **Se numără și username-urile care nu există.** Altfel, după 5 încercări, doar conturile reale ar răspunde „blocat”, iar un atacator ar afla ce username-uri există.
+- **Două plase: per username (5) și per IP (20).** Numai per username ar lăsa un atacator să încerce câte o parolă pe fiecare din sute de conturi; numai per IP ar bloca tot biroul dacă e în spatele aceleiași adrese.
+- **Starea e în memorie, nu în baza de date.** E mai simplu și se resetează la repornire, ceea ce e și metoda de deblocare. Prețul: un atacator poate bloca temporar (15 min) contul cuiva.
+- **Un client cu pontaje nu se șterge, doar se redenumește.** Aceeași regulă ca la angajați: orele deja pontate rămân în rapoarte. Redenumirea nu schimbă `id`-ul, deci pontajele rămân legate de client.
+- **Backup verificat după ce e făcut** (`pg_restore --list`) și testat prin restaurare într-o bază separată, cu aceleași numere de rânduri. Un backup pe care nu l-ai restaurat niciodată e o speranță, nu un backup.
+- **Sarcină programată Windows, nu serviciu Windows propriu-zis.** Un serviciu adevărat cere un program terț (NSSM/WinSW). Sarcina „la pornirea calculatorului”, cu repornire automată, face același lucru fără dependințe noi.
+
+**Concepte noi învățate:**
+- `AuthenticationFailureHandler` / `AuthenticationSuccessHandler` în Spring Security și ordinea filtrelor (`addFilterBefore(..., UsernamePasswordAuthenticationFilter.class)`).
+- Un ceas injectabil (`java.time.Clock`) face testabilă logica de timp: testul „blocarea expiră după 15 minute” avansează un ceas fals, fără să aștepte 15 minute.
+- `pg_dump -Fc` (format custom, comprimat) se restaurează cu `pg_restore`, inclusiv într-o bază nouă.
+- Variabilele de mediu de utilizator (`setx`) nu sunt vizibile oricărui proces; o sarcină pornită la boot le citește explicit din registru (`[Environment]::GetEnvironmentVariable(..., 'User')`).
+- În PowerShell 5.1, un fișier `.ps1` fără BOM e citit ca ANSI: diacriticele din scripturi se strică, deci scripturile sunt scrise doar cu ASCII.
+
+**Unde s-au ivit probleme:**
+- Testele existente făceau logări greșite cu aceleași username-uri; cu blocarea în memorie, contoarele s-ar fi adunat între teste și ar fi blocat teste fără legătură. Soluția: `IntegrationTestBase` golește contoarele înainte de fiecare test.
+- Un `PUT`/`DELETE` anonim pe `/api/clients/...` răspunde cu redirect (302) spre `/login`, nu cu 401. Așa se comportă deja aplicația pe tot `/api`; testul a fost corectat, nu comportamentul.
+
+---

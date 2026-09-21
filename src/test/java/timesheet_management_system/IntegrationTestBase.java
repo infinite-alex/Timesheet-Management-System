@@ -19,6 +19,7 @@ import timesheet_management_system.model.Role;
 import timesheet_management_system.repository.ClientRepository;
 import timesheet_management_system.repository.EmployeeRepository;
 import timesheet_management_system.repository.TimesheetEntryRepository;
+import timesheet_management_system.security.LoginThrottle;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,6 +33,7 @@ public abstract class IntegrationTestBase {
     @Autowired protected ClientRepository clients;
     @Autowired protected TimesheetEntryRepository entries;
     @Autowired protected PasswordEncoder encoder;
+    @Autowired protected LoginThrottle loginThrottle;
 
     protected Employee boss;
     protected Employee worker;
@@ -39,6 +41,7 @@ public abstract class IntegrationTestBase {
 
     @BeforeEach
     void createUsers() {
+        loginThrottle.clear();
         boss = createEmployee("boss", Role.ADMIN);
         worker = createEmployee("worker", Role.ANGAJAT);
         other = createEmployee("other", Role.ANGAJAT);

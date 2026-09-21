@@ -1,5 +1,6 @@
 package timesheet_management_system.repository;
 
+import timesheet_management_system.model.Client;
 import timesheet_management_system.model.Employee;
 import timesheet_management_system.model.TimesheetEntry;
 
@@ -14,6 +15,8 @@ public interface TimesheetEntryRepository extends JpaRepository<TimesheetEntry, 
     List<TimesheetEntry> findByEmployee(Employee employee);
 
     boolean existsByEmployee(Employee employee);
+
+    boolean existsByClient(Client client);
 
     @Query("""
         select distinct e from TimesheetEntry e

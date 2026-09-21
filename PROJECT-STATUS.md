@@ -1,42 +1,43 @@
 # Status proiect — Timesheet Management System
 
 ## Stack
-Spring Boot 4.1.0 (Java 21), Spring Data JPA, Spring Security, Spring Validation (dependință prezentă, neconectată încă — vezi mai jos), Spring Web MVC, Thymeleaf, PostgreSQL, Lombok (dependință, dar neutilizat încă în cod), Maven.
+Spring Boot 4.1.0 (Java 21), Spring Data JPA, Spring Security, Bean Validation, Spring Web MVC, Thymeleaf, PostgreSQL, Maven. Lombok e în `pom.xml`, dar nu e folosit în cod. Teste pe H2 în memorie.
 
 ## Obiectiv
-Aplicație de gestionare a pontajelor pentru un birou de contabilitate. Modelul de date și lista de tipuri de acțiuni au fost derivate din analiza a 32 fișiere Excel de pontaj istoric (~64.400 înregistrări).
+Aplicație de gestionare a pontajelor pentru un birou de contabilitate, folosită zilnic de angajați și administrată de un admin. Lista tipurilor de sarcini a fost derivată din analiza a 32 fișiere Excel de pontaj istoric (~64.400 înregistrări). Importul datelor istorice a fost respins explicit (decizie din 14 septembrie).
 
-## Stadiu actual (13 septembrie 2026)
-Proiectul a avansat mult față de update-ul din 24 iulie: entitățile sunt acum JPA reale, iar layerele de repository/service/controller/security există și funcționează.
+## Stadiu actual (21 septembrie 2026)
+Funcțiile de bază sunt gata și acoperite de teste (287 de teste automate, toate trec). Aplicația e pregătită pentru folosire zilnică: are backup, blocare la parole greșite și pornire automată (scripturile din `scripts/` trebuie instalate o dată, vezi README).
 
-- **Modele** — entități JPA complete, cu adnotări și relații:
-  - `Client`, `Employee` (cu `Role` — enum ADMIN/EMPLOYEE), `TimesheetEntry` (relații `@ManyToOne` către `Employee`/`Client`, `workingmonth` acum `enum WorkingMonth` în loc de `String`).
-  - `ActionCatalog` — listă hardcodată de tipuri de acțiuni.
-- **Repository layer** (Spring Data JPA) — `ClientRepository`, `EmployeeRepository`, `TimesheetEntryRepository`. Făcut.
-- **Service layer** — `ClientService`, `EmployeeService`, `TimesheetEntryService`. `TimesheetEntryService.findAll()` filtrează după rol: ADMIN vede toate înregistrările, EMPLOYEE doar pe ale lui (prin `SecurityContextHolder`).
-- **DTO-uri + controllere REST** — `ClientDto`, `EmployeeDto`, `EmployeeCreateDto`, `TimesheetEntryDto` + `ClientController`, `EmployeeController`, `TimesheetEntryController` (`/api/...`, CRUD de bază: GET/POST).
-- **Securitate** — `SecurityConfig`, `EmployeeUserDetailsService`, `AdminSeeder` (creează un admin la pornire), `LoginController` + `login.html`. Autentificare pe bază de sesiune, cu rol per `Employee`.
-- **Frontend (început 13 septembrie)** — primele pagini Thymeleaf: `login.html`, `pontajele-mele.html` (pagina de pontaje a angajatului), servite prin `HomeController` și `TimesheetEntryPageController`.
-- **Parola bazei de date** — nu mai e în clar în `application.properties`; se citește din variabila de mediu `DB_PASSWORD` (issue #17, închis).
+### Funcționalități
+- **Conturi** — autentificare pe sesiune, roluri `ADMIN` / `ANGAJAT`. Înregistrare liberă la `/register` (rol angajat). Pagina „Contul meu” (`/cont`) pentru schimbarea parolei. Politică de parolă: 8–72 de caractere. Un cont dezactivat sau cu rol schimbat pierde accesul imediat, chiar cu sesiune deschisă.
+- **Pontaje** — angajatul își adaugă, editează și șterge propriile pontaje (`/pontaj`); adminul le gestionează pe toate. Fiecare pontaj are dată, client (opțional), lună de lucru, durată, sarcină din catalog și notă.
+- **Administrare** (`/admin`) — statistici, toate pontajele cu căutare, angajați (creare, editare nume/rol/stare/parolă nouă, ștergere doar dacă nu are pontaje, altfel dezactivare) și clienți (creare, **redenumire, ștergere doar dacă nu are pontaje**). Regula de siguranță: rămâne mereu cel puțin un admin activ.
+- **Rapoarte** (`/rapoarte`, doar admin) — pe angajați, pe clienți și pe sarcini, cu filtre pe perioadă, client, angajat și sarcină; export CSV protejat împotriva injecției de formule. Acoperă vechile cerințe #4 (persoană–dată), #5 (persoană–client) și #9 (timp adunat).
+- **Securitate** — vezi mai jos.
 
-## Ce lipsește încă (verificat direct în cod, nu doar din issues)
-1. **Import date istorice din Excel** (#14) — nicio dependință Apache POI în `pom.xml`, niciun serviciu/endpoint de import. Nefăcut.
-2. **Validare (Bean Validation) + tratare globală a erorilor** (#15) — dependința `spring-boot-starter-validation` e în `pom.xml`, dar nu e folosită: niciun `@Valid` pe controllere, niciun `@ControllerAdvice`/`@ExceptionHandler`. Erorile curente aruncă `RuntimeException` simplu (ex. în `TimesheetEntryService.getCurrentEmployee`/`toEntity`), fără mapare la coduri HTTP sau mesaje curate.
-3. **Teste unitare și de integrare** (#16) — doar testul default generat de Spring Initializr, `DemoApplicationTests`. Nimic pentru service/repository/controller.
-4. **Rapoarte** — `raport persoana-client` (#5) și `raport persoana - data` (#4) — nu există cod dedicat de agregare/raportare.
-5. **`timpul adunat`** (#9, agregare ore lucrate) — nu există logică de sumă/agregare în `TimesheetEntryService` sau altundeva încă.
-6. **Encapsulare `TimesheetEntry`** — `getActions()`/`setActions()` fac deja copie defensivă (`new ArrayList<>(...)`), deci nota veche despre asta e rezolvată.
+### Securitate și operare (adăugate pe 21 septembrie)
+- **Blocare la parole greșite** — 5 parole greșite pentru același username (indiferent de litere mari/mici) blochează logarea 15 minute; și 20 de eșecuri de la aceeași adresă IP. Blocarea se aplică înainte de verificarea parolei și și pentru username-uri inexistente, ca răspunsul să nu arate ce conturi există. Înregistrarea e limitată la 10 pe adresă IP în 15 minute. Pragurile se schimbă din `application.properties` (`app.security.*`). Starea e în memorie: repornirea aplicației o resetează.
+- **Backup** — `scripts/backup-db.ps1` face `pg_dump` (format custom), verifică fișierul cu `pg_restore --list`, păstrează 30 de zile și poate copia și pe alt disc (`-CopyTo`). `scripts/restore-db.ps1` restaurează într-o bază nouă, fără să suprascrie baza reală. Testat: backup + restaurare, cu aceleași numere de rânduri.
+- **Pornire automată** — `scripts/install-autostart.ps1` creează două sarcini programate Windows: `Timesheet-Server` (pornește aplicația la boot și o repornește dacă cade) și `Timesheet-Backup` (zilnic la 22:00). E sarcină programată, nu serviciu Windows propriu-zis, ca să nu depindem de un program terț.
+- **Configurare** — parola bazei de date și a adminului vin din variabile de mediu (`DB_PASSWORD`, `ADMIN_PASSWORD`). `show-sql` e oprit.
 
-## Discrepanță issues vs. cod (de curățat pe GitHub)
-Issue-urile #10 (Repository layer), #11 (Service layer), #12 (Securitate), #13 (DTO-uri + controllere REST) apar încă **deschise** pe GitHub, dar munca corespunzătoare e deja făcută și commisă (`service + repository`, `CRUD API layer done`, `beginning of security config`). Ar trebui închise pentru ca board-ul să reflecte realitatea.
+## Ce mai lipsește
+**De făcut de tine, o singură dată:** rulează `scripts\install-autostart.ps1` dintr-un PowerShell „ca administrator” (nu l-am rulat eu, cere drepturi de administrator). Apoi verifică pe http://localhost:8080 și în `logs\run-server.log`.
 
-## Ce urmează (ordine sugerată, actualizată)
-1. Validare (Bean Validation pe DTO-uri) + `@ControllerAdvice` pentru tratare globală a erorilor — înlocuiește `RuntimeException`-urile simple din servicii.
-2. Teste unitare (service layer) și de integrare (repository/controller).
-3. Import date istorice din cele 32 fișiere Excel (~64.400 rânduri).
-4. Logică de agregare a orelor (`timpul adunat`) și rapoarte per persoană/client/dată.
-5. Continuare frontend (CRUD complet din UI, nu doar listare pontaje proprii).
-6. Închiderea issue-urilor #10–#13 pe GitHub, ca board-ul să reflecte stadiul real.
+**Lipsuri de funcționalitate:**
+1. Blocarea unei luni închise (nimeni nu mai modifică pontajele după închiderea lunii).
+2. Lista de sarcini e fixă în cod (`ActionCatalog`); adminul nu poate adăuga sarcini.
+3. Adminul nu poate adăuga pontaje pe numele altcuiva din interfață (doar prin API).
+4. Un angajat care și-a uitat parola depinde de admin.
+5. Raport lunar per angajat gata de tipărit sau export Excel (acum doar CSV).
+
+**Mai târziu, dacă crește:** HTTPS, CSRF pe API (acum dezactivat pe `/api/**`), aprobarea conturilor noi de către admin, paginare pe liste.
+
+**Limite cunoscute:**
+- Backup-ul implicit e pe același disc cu baza de date; folosește `-CopyTo` spre un disc extern sau alt loc, altfel un disc defect îl pierde odată cu baza.
+- Blocarea după parole greșite poate fi folosită și de un atacator ca să blocheze temporar contul cuiva (15 minute). E compromisul obișnuit; adminul se deblochează repornind aplicația.
+- Adresa IP e cea văzută de server. Dacă pui aplicația în spatele unui proxy, trebuie configurat `server.forward-headers-strategy`, altfel toți utilizatorii apar cu aceeași adresă.
 
 ## Context pentru planificare
-Lucrul la proiect e part-time, în afara unui job de contabilitate. În august disponibilitatea a fost aproape zero — planul de mai sus presupune reluarea ritmului din septembrie.
+Lucrul la proiect e part-time, în afara unui job de contabilitate.

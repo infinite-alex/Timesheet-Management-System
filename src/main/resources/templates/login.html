@@ -30,6 +30,7 @@
             <p class="sub">Intră în cont ca să continui.</p>
 
             <div class="alert alert-error" th:if="${param.error}">Username sau parolă greșite. Încearcă din nou.</div>
+            <div class="alert alert-error" th:if="${param.locked}" th:text="|Prea multe încercări greșite. Încearcă din nou peste ${lockoutMinutes} de minute.|">Prea multe încercări greșite.</div>
             <div class="alert alert-ok" th:if="${param.logout}">Te-ai deconectat.</div>
             <div class="alert alert-ok" th:if="${param.registered}">Cont creat. Te poți autentifica acum.</div>
 

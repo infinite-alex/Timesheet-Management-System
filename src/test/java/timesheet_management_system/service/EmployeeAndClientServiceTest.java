@@ -105,7 +105,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void clientSave_keepsTheName() {
-        ClientService service = new ClientService(clientRepository);
+        ClientService service = new ClientService(clientRepository, entryRepository);
         when(clientRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ClientDto result = service.save(new ClientDto(null, "Firma SRL"));
@@ -115,7 +115,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void clientFindAll_mapsEveryClient() {
-        ClientService service = new ClientService(clientRepository);
+        ClientService service = new ClientService(clientRepository, entryRepository);
         when(clientRepository.findAll()).thenReturn(List.of(new Client("A"), new Client("B")));
 
         assertThat(service.findAll()).extracting(ClientDto::name).containsExactly("A", "B");

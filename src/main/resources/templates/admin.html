@@ -151,9 +151,9 @@
                     </div>
                     <div class="table-wrap" th:unless="${#lists.isEmpty(clients)}">
                         <table>
-                            <thead><tr><th>Client</th><th>ID</th></tr></thead>
+                            <thead><tr><th>Client</th><th>ID</th><th>Pontaje</th><th class="actions-col"></th></tr></thead>
                             <tbody>
-                                <tr th:each="client : ${clients}">
+                                <tr th:each="client : ${clients}" th:attr="data-client-id=${client.id()},data-client-name=${client.name()}">
                                     <td>
                                         <div class="who">
                                             <span class="avatar sm soft" th:text="${#strings.toUpperCase(#strings.substring(client.name(), 0, 1))}">C</span>
@@ -161,6 +161,14 @@
                                         </div>
                                     </td>
                                     <td class="mono muted" th:text="${'#' + client.id()}"></td>
+                                    <td class="num" th:text="${entriesPerClient.getOrDefault(client.id(), 0L)}"></td>
+                                    <td class="row-actions-cell">
+                                        <div class="row-actions">
+                                            <button type="button" class="icon-btn" data-client-edit aria-label="Editează clientul" title="Editează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                                            <button type="button" class="icon-btn danger" data-client-delete aria-label="Șterge clientul" title="Șterge"
+                                                    th:if="${entriesPerClient.getOrDefault(client.id(), 0L) == 0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+                                        </div>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -183,10 +191,12 @@
 
 <div th:replace="~{fragments :: entryDialogs(${clients}, ${taskGroups}, ${months})}"></div>
 <div th:replace="~{fragments :: employeeDialogs}"></div>
+<div th:replace="~{fragments :: clientDialogs}"></div>
 
 <script th:src="@{/js/app.js}"></script>
 <script th:src="@{/js/entries.js}"></script>
 <script th:src="@{/js/employees.js}"></script>
+<script th:src="@{/js/clients.js}"></script>
 <script>
     function reload() { location.reload(); }
 

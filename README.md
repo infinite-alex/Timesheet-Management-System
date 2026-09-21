@@ -31,6 +31,58 @@ schimb-o in PostgreSQL: `ALTER USER postgres WITH PASSWORD 'parola-noua';`.
 - Adminul gestioneaza angajatii din panou: editare (nume, rol, stare, parola noua), dezactivare si
   stergere (permisa doar daca angajatul nu are pontaje; altfel se dezactiveaza, iar orele raman in rapoarte).
 - Un cont dezactivat sau cu rol schimbat pierde accesul imediat, chiar daca are o sesiune deschisa.
+- Adminul gestioneaza si clientii: redenumire si stergere (stergerea e permisa doar daca clientul nu are
+  pontaje; redenumirea pastreaza pontajele legate de client).
+
+## Protectie la parole gresite
+
+- 5 parole gresite pentru acelasi username (fara diferenta intre litere mari si mici) blocheaza logarea 15 minute,
+  chiar daca urmatoarea parola e corecta. Un login reusit reseteaza numaratoarea.
+- 20 de logari gresite de la aceeasi adresa IP blocheaza logarea de la acea adresa 15 minute.
+- Inregistrarea e limitata la 10 conturi noi pe adresa IP in 15 minute.
+- Pragurile se schimba in `application.properties`: `app.security.max-login-failures`,
+  `max-login-failures-per-ip`, `max-registrations-per-ip`, `lockout-minutes`.
+- Starea e tinuta in memorie: repornirea aplicatiei deblocheaza toate conturile (asa deblochezi un cont
+  blocat din greseala). Daca pui aplicatia in spatele unui proxy, seteaza `server.forward-headers-strategy=framework`,
+  altfel toti utilizatorii apar cu adresa proxy-ului.
+
+## Pornire automata si backup (Windows)
+
+Scripturile sunt in `scripts\`. Instalarea se face o singura data, dintr-un PowerShell deschis **ca administrator**:
+
+```
+cd C:\Users\alexu\Timesheet-Management-System
+powershell -ExecutionPolicy Bypass -File scripts\install-autostart.ps1
+```
+
+Creeaza doua sarcini programate (rulate ca utilizatorul tau, fara fereastra):
+
+- `Timesheet-Server` - porneste aplicatia la pornirea calculatorului, chiar daca nimeni nu e logat, o reporneste
+  daca se opreste si asteapta PostgreSQL. Aplicatia raspunde pe http://localhost:8080. Jurnale: `logs\`.
+- `Timesheet-Backup` - `pg_dump` in fiecare zi la 22:00 (sau la prima ocazie, daca calculatorul era oprit), in
+  `C:\Users\alexu\Backups\timesheet`, cu pastrare 30 de zile.
+
+Optiuni: `-BackupAt 23:30`, `-BackupDir D:\backup`, `-BackupCopyTo E:\backup` (copie si pe alt disc), `-SkipServer`, `-SkipBackup`.
+**Backup-ul de pe acelasi disc nu te apara de un disc defect: seteaza `-BackupCopyTo` spre un disc extern sau alt loc.**
+Backup-ul contine numele clientilor si ale angajatilor; alege cu grija un loc in cloud.
+
+`DB_PASSWORD` (si `ADMIN_PASSWORD`) trebuie sa fie setate cu `setx` (utilizator) sau `setx /M` (masina); scripturile le citesc de acolo.
+Accesul de la alte calculatoare din birou cere in plus o regula de firewall pentru portul 8080 (nu o creeaza scriptul).
+
+Dupa ce schimbi codul: `powershell -ExecutionPolicy Bypass -File scripts\update-server.ps1` (opreste serverul,
+reconstruieste jar-ul si il porneste). Ca sa scoti sarcinile: `scripts\uninstall-autostart.ps1`.
+Rulare manuala, fara sarcini: `powershell -File scripts\run-server.ps1`.
+
+Backup manual: `powershell -File scripts\backup-db.ps1`.
+
+Restaurare (intr-o baza noua, ca sa verifici datele, nu suprascrie `timesheetdb`):
+
+```
+powershell -File scripts\restore-db.ps1 -BackupFile C:\Users\alexu\Backups\timesheet\timesheetdb-2026-09-21_22-00-00.dump
+```
+
+Ca sa inlocuiesti baza reala cu cea restaurata: opreste aplicatia, redenumeste `timesheetdb` (de ex. in `timesheetdb_veche`)
+si `timesheetdb_restore` in `timesheetdb` (`ALTER DATABASE ... RENAME TO ...` in psql), apoi porneste aplicatia.
 
 ## Teste
 

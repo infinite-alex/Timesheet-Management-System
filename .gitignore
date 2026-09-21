@@ -34,3 +34,4 @@ target/
 # local secrets (never commit)
 .env
 application-local.properties
+logs/

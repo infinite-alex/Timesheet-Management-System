@@ -44,6 +44,9 @@ public class AdminPageController {
         model.addAttribute("username", authentication.getName());
         model.addAttribute("entries", entries);
         model.addAttribute("entriesPerEmployee", entriesPerEmployee);
+        model.addAttribute("entriesPerClient", entries.stream()
+            .filter(entry -> entry.clientId() != null)
+            .collect(Collectors.groupingBy(TimesheetEntryDto::clientId, Collectors.counting())));
         model.addAttribute("totalMinutes", entries.stream().mapToInt(TimesheetEntryDto::totalMinutes).sum());
         model.addAttribute("employees", employeeService.findAll());
         model.addAttribute("clients", clientService.findAll());
