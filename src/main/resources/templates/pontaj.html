@@ -47,10 +47,11 @@
                             <th>Durată</th>
                             <th>Sarcină</th>
                             <th>Notă</th>
+                            <th class="actions-col"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="entry : ${entries}">
+                        <tr th:each="entry : ${entries}" th:attr="data-id=${entry.id()},data-date=${entry.date()},data-client=${entry.clientId()},data-client-name=${entry.clientName()},data-task=${#lists.isEmpty(entry.actions()) ? '' : entry.actions().get(0)},data-month=${entry.workingmonth()},data-minutes=${entry.totalMinutes()},data-note=${entry.extranote()},data-who=${entry.employeeName()}">
                             <td class="num" th:text="|${#numbers.formatInteger(entry.date().dayOfMonth, 2)}.${#numbers.formatInteger(entry.date().monthValue, 2)}.${entry.date().year}|"></td>
                             <td>
                                 <span th:if="${entry.clientName() != null}" th:text="${entry.clientName()}" style="font-weight:600"></span>
@@ -63,6 +64,12 @@
                                 <span th:each="a : ${entry.actions()}" th:text="${a}"></span>
                             </td>
                             <td class="muted" th:text="${entry.extranote() == null or entry.extranote() == ''} ? '—' : ${entry.extranote()}"></td>
+                            <td class="row-actions-cell">
+                                <div class="row-actions">
+                                    <button type="button" class="icon-btn" data-edit aria-label="Editează pontajul" title="Editează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                                    <button type="button" class="icon-btn danger" data-delete aria-label="Șterge pontajul" title="Șterge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -122,7 +129,10 @@
     </div>
 </main>
 
+<div th:replace="~{fragments :: entryDialogs(${clients}, ${taskGroups}, ${months})}"></div>
+
 <script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/entries.js}"></script>
 <script>
     var dateInput = document.getElementById('date');
     var monthSelect = document.getElementById('workingmonth');

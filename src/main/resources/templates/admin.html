@@ -52,10 +52,11 @@
                             <th>Durată</th>
                             <th>Sarcină</th>
                             <th>Notă</th>
+                            <th class="actions-col"></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr th:each="entry : ${entries}">
+                        <tr th:each="entry : ${entries}" th:attr="data-id=${entry.id()},data-date=${entry.date()},data-client=${entry.clientId()},data-client-name=${entry.clientName()},data-task=${#lists.isEmpty(entry.actions()) ? '' : entry.actions().get(0)},data-month=${entry.workingmonth()},data-minutes=${entry.totalMinutes()},data-note=${entry.extranote()},data-who=${entry.employeeName()}">
                             <td>
                                 <div class="who">
                                     <span class="avatar sm soft" th:text="${#strings.toUpperCase(#strings.substring(entry.employeeName(), 0, 1))}">A</span>
@@ -74,6 +75,12 @@
                                 <span th:each="a : ${entry.actions()}" th:text="${a}"></span>
                             </td>
                             <td class="muted" th:text="${entry.extranote() == null or entry.extranote() == ''} ? '—' : ${entry.extranote()}"></td>
+                            <td class="row-actions-cell">
+                                <div class="row-actions">
+                                    <button type="button" class="icon-btn" data-edit aria-label="Editează pontajul" title="Editează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                                    <button type="button" class="icon-btn danger" data-delete aria-label="Șterge pontajul" title="Șterge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -86,10 +93,11 @@
                     <div class="table-wrap">
                         <table>
                             <thead>
-                                <tr><th>Angajat</th><th>Username</th><th>Rol</th></tr>
+                                <tr><th>Angajat</th><th>Username</th><th>Rol</th><th>Stare</th><th>Pontaje</th><th class="actions-col"></th></tr>
                             </thead>
                             <tbody>
-                                <tr th:each="employee : ${employees}">
+                                <tr th:each="employee : ${employees}" th:classappend="${!employee.active()} ? 'is-off'"
+                                    th:attr="data-emp-id=${employee.id()},data-emp-name=${employee.name()},data-emp-username=${employee.username()},data-emp-role=${employee.role().name()},data-emp-active=${employee.active()},data-emp-self=${employee.username() == username}">
                                     <td>
                                         <div class="who">
                                             <span class="avatar sm soft" th:text="${#strings.toUpperCase(#strings.substring(employee.name(), 0, 1))}">A</span>
@@ -98,6 +106,15 @@
                                     </td>
                                     <td class="mono" th:text="${employee.username()}"></td>
                                     <td><span class="pill" th:classappend="${employee.role().name() == 'ADMIN'} ? 'pill-dark'" th:text="${#strings.capitalize(#strings.toLowerCase(employee.role().name()))}"></span></td>
+                                    <td><span class="pill" th:classappend="${employee.active()} ? 'pill-brand' : 'pill-off'" th:text="${employee.active()} ? 'Activ' : 'Dezactivat'"></span></td>
+                                    <td class="num" th:text="${entriesPerEmployee.getOrDefault(employee.id(), 0L)}"></td>
+                                    <td class="row-actions-cell">
+                                        <div class="row-actions">
+                                            <button type="button" class="icon-btn" data-emp-edit aria-label="Editează angajatul" title="Editează"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+                                            <button type="button" class="icon-btn danger" data-emp-delete aria-label="Șterge angajatul" title="Șterge"
+                                                    th:if="${employee.username() != username and entriesPerEmployee.getOrDefault(employee.id(), 0L) == 0}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg></button>
+                                        </div>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -164,7 +181,12 @@
     </div>
 </main>
 
+<div th:replace="~{fragments :: entryDialogs(${clients}, ${taskGroups}, ${months})}"></div>
+<div th:replace="~{fragments :: employeeDialogs}"></div>
+
 <script th:src="@{/js/app.js}"></script>
+<script th:src="@{/js/entries.js}"></script>
+<script th:src="@{/js/employees.js}"></script>
 <script>
     function reload() { location.reload(); }
 

@@ -21,12 +21,15 @@ public class AdminSeeder implements CommandLineRunner {
     private final EmployeeRepository employeeRepository;
     private final PasswordEncoder passwordEncoder;
     private final String configuredPassword;
+    private final boolean resetPassword;
 
     public AdminSeeder(EmployeeRepository employeeRepository, PasswordEncoder passwordEncoder,
-            @Value("${app.admin.password:}") String configuredPassword) {
+            @Value("${app.admin.password:}") String configuredPassword,
+            @Value("${app.admin.reset-password:false}") boolean resetPassword) {
         this.employeeRepository = employeeRepository;
         this.passwordEncoder = passwordEncoder;
         this.configuredPassword = configuredPassword == null ? "" : configuredPassword;
+        this.resetPassword = resetPassword;
     }
 
     @Override
@@ -47,11 +50,12 @@ public class AdminSeeder implements CommandLineRunner {
             } else {
                 System.out.println("Cont admin creat. Parola generată (o vezi doar acum, salveaz-o): " + password);
             }
-        } else if (configured && !passwordEncoder.matches(configuredPassword, existing.get().getPassword())) {
+        } else if (resetPassword && configured
+                && !passwordEncoder.matches(configuredPassword, existing.get().getPassword())) {
             Employee admin = existing.get();
             admin.setPassword(passwordEncoder.encode(configuredPassword));
             employeeRepository.save(admin);
-            System.out.println("Parola contului admin a fost actualizată din ADMIN_PASSWORD.");
+            System.out.println("Parola contului admin a fost resetată din ADMIN_PASSWORD (ADMIN_RESET_PASSWORD=true).");
         }
     }
 

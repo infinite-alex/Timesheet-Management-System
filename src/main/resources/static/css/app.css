@@ -385,3 +385,40 @@ textarea.input { resize: vertical; min-height: 88px; }
 .bar span { display: block; height: 100%; background: var(--brand); }
 .bar.small { height: 8px; border-radius: 999px; overflow: hidden; }
 a.btn { text-decoration: none; display: inline-block; }
+
+a.user-chip { color: inherit; text-decoration: none; transition: background 0.15s ease; }
+a.user-chip:hover { background: rgba(255, 255, 255, 0.14); }
+
+.btn-soft { background: var(--bg); color: var(--ink-soft); }
+.btn-soft:hover { background: #e7ebef; }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-danger:disabled { opacity: 0.6; cursor: wait; }
+
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; white-space: nowrap; }
+.icon-btn { width: 34px; height: 34px; border-radius: 9px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; display: inline-grid; place-items: center; transition: background 0.12s ease, color 0.12s ease; }
+.icon-btn svg { width: 17px; height: 17px; }
+.icon-btn:hover { background: var(--bg); color: var(--ink); }
+.icon-btn.danger:hover { background: var(--danger-50); color: var(--danger); }
+th.actions-col { width: 1%; }
+
+.pill-off { background: #fef3c7; color: #92400e; }
+tr.is-off td { opacity: 0.6; }
+tr.is-off td.row-actions-cell { opacity: 1; }
+
+dialog.dialog { border: 0; border-radius: 18px; padding: 0; width: calc(100% - 32px); max-width: 600px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35); color: var(--ink); font-family: var(--font); }
+dialog.dialog-sm { max-width: 440px; }
+dialog.dialog::backdrop { background: rgba(13, 18, 21, 0.55); }
+.dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 22px 24px 4px; }
+.dialog-head h2 { font-size: 19px; font-weight: 700; }
+.dialog-head p { font-size: 13px; margin-top: 2px; }
+.dialog-body { padding: 16px 24px 4px; }
+.dialog-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 24px 22px; }
+.account-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }
+.profile-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.profile-row:last-child { border-bottom: 0; }
+.profile-row span:first-child { color: var(--muted); }
+@media (max-width: 900px) { .account-grid { grid-template-columns: 1fr; } }
+
+.split thead th, .split tbody td { padding-left: 12px; padding-right: 12px; }
+.split .who { gap: 10px; }

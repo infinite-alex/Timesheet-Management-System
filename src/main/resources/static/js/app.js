@@ -45,13 +45,15 @@
         setTimeout(function () { el.remove(); }, 4200);
     };
 
-    window.postJson = function (url, payload) {
-        return fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).then(function (res) {
-            if (res.redirected) throw new Error('Sesiunea a expirat. Autentifică-te din nou.');
+    window.sendJson = function (method, url, payload) {
+        var options = { method: method, headers: {} };
+        if (payload !== undefined) {
+            options.headers['Content-Type'] = 'application/json';
+            options.body = JSON.stringify(payload);
+        }
+        return fetch(url, options).then(function (res) {
+            if (res.redirected || res.status === 401) throw new Error('Sesiunea a expirat. Autentifică-te din nou.');
+            if (res.status === 204) return null;
             if (res.ok) return res.json();
             return res.json().catch(function () { return {}; }).then(function (body) {
                 var msg = body.error || (res.status === 403
@@ -60,6 +62,29 @@
                 throw new Error(msg);
             });
         });
+    };
+
+    window.postJson = function (url, payload) {
+        return window.sendJson('POST', url, payload);
+    };
+
+    document.addEventListener('click', function (event) {
+        var close = event.target.closest('[data-close]');
+        if (close) {
+            var dialog = close.closest('dialog');
+            if (dialog) dialog.close();
+            return;
+        }
+        if (event.target.tagName === 'DIALOG') event.target.close();
+    });
+
+    window.durationLabel = function (minutes) {
+        return Math.floor(minutes / 60) + 'h ' + (minutes % 60) + 'm';
+    };
+
+    window.dateLabel = function (iso) {
+        var p = iso.split('-');
+        return p[2] + '.' + p[1] + '.' + p[0];
     };
 
     window.submitForm = function (form, button, build, url, onDone) {

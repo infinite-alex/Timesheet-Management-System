@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 public interface TimesheetEntryRepository extends JpaRepository<TimesheetEntry, Long> {
     List<TimesheetEntry> findByEmployee(Employee employee);
 
+    boolean existsByEmployee(Employee employee);
+
     @Query("""
         select distinct e from TimesheetEntry e
         join fetch e.employee

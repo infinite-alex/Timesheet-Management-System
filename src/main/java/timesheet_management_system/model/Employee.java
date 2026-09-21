@@ -20,6 +20,7 @@ public class Employee{
     private String password;
     @Enumerated (EnumType.STRING)
     private Role role;
+    private Boolean active = true;
 
     public Employee(String name, String username, String password, Role role ){
         this.name=name;
@@ -58,6 +59,13 @@ public class Employee{
     }
     public Role getRole(){
         return role;
+    }
+
+    public boolean isActive(){
+        return active == null || active;
+    }
+    public void setActive(boolean active){
+        this.active = active;
     }
 
 

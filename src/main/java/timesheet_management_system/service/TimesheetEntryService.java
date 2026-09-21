@@ -12,6 +12,7 @@ import timesheet_management_system.repository.ClientRepository;
 import timesheet_management_system.repository.EmployeeRepository;
 import timesheet_management_system.repository.TimesheetEntryRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.ArrayList;
@@ -100,6 +101,42 @@ public class TimesheetEntryService {
         TimesheetEntry saved = timesheetEntryRepository.save(toEntity(effectiveDto));
         return toDto(saved);
     }
+    @Transactional
+    public TimesheetEntryDto update(Long id, TimesheetEntryDto dto) {
+        Employee currentEmployee = getCurrentEmployee();
+        TimesheetEntry entry = findAccessible(id, currentEmployee);
+        validateTask(dto.actions());
+
+        Client client = null;
+        if (dto.clientId() != null) {
+            client = clientRepository.findById(dto.clientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Clientul cu id " + dto.clientId() + " nu există."));
+        }
+
+        entry.setClient(client);
+        entry.setWorkingMonth(dto.workingmonth());
+        entry.setTotalMinutes(dto.totalMinutes());
+        entry.setActions(dto.actions());
+        entry.setExtraNote(dto.extranote());
+        return toDto(timesheetEntryRepository.save(entry));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Employee currentEmployee = getCurrentEmployee();
+        timesheetEntryRepository.delete(findAccessible(id, currentEmployee));
+    }
+
+    private TimesheetEntry findAccessible(Long id, Employee currentEmployee) {
+        TimesheetEntry entry = timesheetEntryRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Pontajul nu există."));
+        boolean isOwner = entry.getEmployee().getId().equals(currentEmployee.getId());
+        if (currentEmployee.getRole() != Role.ADMIN && !isOwner) {
+            throw new ResourceNotFoundException("Pontajul nu există.");
+        }
+        return entry;
+    }
+
     private TimesheetEntryDto toDto(TimesheetEntry entry) {
         Long clientId;
         String clientName;

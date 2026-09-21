@@ -25,13 +25,13 @@
                     <a th:href="@{/admin}" class="nav-link" th:classappend="${active == 'admin'} ? 'active'">Panou</a>
                     <a th:href="@{/rapoarte}" class="nav-link" th:classappend="${active == 'rapoarte'} ? 'active'">Rapoarte</a>
                 </div>
-                <div class="user-chip">
+                <a class="user-chip" th:href="@{/cont}" title="Contul meu">
                     <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(username, 0, 1))}">A</span>
                     <div>
                         <strong th:text="${username}">utilizator</strong>
                         <small th:text="${role}">Angajat</small>
                     </div>
-                </div>
+                </a>
                 <form th:action="@{/logout}" method="post">
                     <button type="submit" class="btn btn-ghost">Deconectare</button>
                 </form>
@@ -43,5 +43,130 @@
         </div>
     </div>
 </header>
+
+<div th:fragment="entryDialogs(clients, taskGroups, months)">
+    <dialog id="editDialog" class="dialog">
+        <form id="editForm">
+            <div class="dialog-head">
+                <div><h2>Editează pontajul</h2><p class="muted" id="editSubtitle"></p></div>
+                <button type="button" class="icon-btn" data-close aria-label="Închide">&times;</button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="editMonth">Luna de lucru</label>
+                        <select class="input" id="editMonth" required>
+                            <option th:each="m : ${months}" th:value="${m}" th:text="${#strings.capitalize(#strings.toLowerCase(m))}"></option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="editClient">Client</label>
+                        <select class="input" id="editClient">
+                            <option value="">Fără client</option>
+                            <option th:each="c : ${clients}" th:value="${c.id()}" th:text="${c.name()}"></option>
+                        </select>
+                    </div>
+                    <div class="field full">
+                        <label for="editTask">Sarcină</label>
+                        <select class="input" id="editTask" required>
+                            <option value="" disabled>Alege sarcina</option>
+                            <optgroup th:each="group : ${taskGroups}" th:label="${group.key}">
+                                <option th:each="t : ${group.value}" th:value="${t}" th:text="${t}"></option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="field full">
+                        <label>Durată</label>
+                        <div class="duration">
+                            <div class="suffix"><input class="input" type="number" id="editHours" min="0" max="24" value="0" /><span>ore</span></div>
+                            <div class="suffix"><input class="input" type="number" id="editMinutes" min="0" max="59" value="0" /><span>min</span></div>
+                        </div>
+                    </div>
+                    <div class="field full">
+                        <label for="editNote">Notă</label>
+                        <textarea class="input" id="editNote" maxlength="255"></textarea>
+                        <span class="hint">Data și angajatul nu se pot modifica. Dacă ai greșit data, șterge pontajul și adaugă-l din nou.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-foot">
+                <button type="button" class="btn btn-soft" data-close>Renunță</button>
+                <button type="submit" class="btn btn-primary" id="editSave">Salvează modificările</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="deleteDialog" class="dialog dialog-sm">
+        <div class="dialog-head">
+            <div><h2>Ștergi pontajul?</h2></div>
+            <button type="button" class="icon-btn" data-close aria-label="Închide">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <p id="deleteText"></p>
+            <p class="muted" style="margin-top:8px">Acțiunea nu se poate anula.</p>
+        </div>
+        <div class="dialog-foot">
+            <button type="button" class="btn btn-soft" data-close>Renunță</button>
+            <button type="button" class="btn btn-danger" id="deleteConfirm">Șterge pontajul</button>
+        </div>
+    </dialog>
+</div>
+
+<div th:fragment="employeeDialogs">
+    <dialog id="empEditDialog" class="dialog">
+        <form id="empEditForm">
+            <div class="dialog-head">
+                <div><h2>Editează angajatul</h2><p class="muted" id="empEditSubtitle"></p></div>
+                <button type="button" class="icon-btn" data-close aria-label="Închide">&times;</button>
+            </div>
+            <div class="dialog-body">
+                <div class="form-grid">
+                    <div class="field full">
+                        <label for="empEditName">Nume complet</label>
+                        <input class="input" type="text" id="empEditName" maxlength="100" required />
+                    </div>
+                    <div class="field">
+                        <label for="empEditRole">Rol</label>
+                        <select class="input" id="empEditRole">
+                            <option value="ANGAJAT">Angajat</option>
+                            <option value="ADMIN">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="empEditActive">Stare cont</label>
+                        <select class="input" id="empEditActive">
+                            <option value="true">Activ</option>
+                            <option value="false">Dezactivat</option>
+                        </select>
+                    </div>
+                    <div class="field full">
+                        <label for="empEditPassword">Parolă nouă <span class="hint">(opțional)</span></label>
+                        <input class="input" type="password" id="empEditPassword" autocomplete="new-password" minlength="8" maxlength="72" placeholder="Lasă gol ca să nu o schimbi" />
+                        <span class="hint">Un angajat dezactivat nu se mai poate autentifica, dar orele lui rămân în rapoarte.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-foot">
+                <button type="button" class="btn btn-soft" data-close>Renunță</button>
+                <button type="submit" class="btn btn-primary" id="empEditSave">Salvează modificările</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="empDeleteDialog" class="dialog dialog-sm">
+        <div class="dialog-head">
+            <div><h2>Ștergi angajatul?</h2></div>
+            <button type="button" class="icon-btn" data-close aria-label="Închide">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <p id="empDeleteText"></p>
+            <p class="muted" style="margin-top:8px">Acțiunea nu se poate anula.</p>
+        </div>
+        <div class="dialog-foot">
+            <button type="button" class="btn btn-soft" data-close>Renunță</button>
+            <button type="button" class="btn btn-danger" id="empDeleteConfirm">Șterge angajatul</button>
+        </div>
+    </dialog>
+</div>
 </body>
 </html>

@@ -25,18 +25,20 @@ import timesheet_management_system.model.Employee;
 import timesheet_management_system.model.Role;
 import timesheet_management_system.repository.ClientRepository;
 import timesheet_management_system.repository.EmployeeRepository;
+import timesheet_management_system.repository.TimesheetEntryRepository;
 
 @ExtendWith(MockitoExtension.class)
 class EmployeeAndClientServiceTest {
 
     @Mock EmployeeRepository employeeRepository;
     @Mock ClientRepository clientRepository;
+    @Mock TimesheetEntryRepository entryRepository;
 
     PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @Test
     void employeePassword_isHashedBeforeSaving() {
-        EmployeeService service = new EmployeeService(employeeRepository, encoder);
+        EmployeeService service = new EmployeeService(employeeRepository, encoder, entryRepository);
         when(employeeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.save(new EmployeeCreateDto("Ana", "ana", "secret123", Role.ANGAJAT));
@@ -50,7 +52,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void samePassword_producesDifferentHashesForDifferentUsers() {
-        EmployeeService service = new EmployeeService(employeeRepository, encoder);
+        EmployeeService service = new EmployeeService(employeeRepository, encoder, entryRepository);
         when(employeeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         service.save(new EmployeeCreateDto("A", "a", "same", Role.ANGAJAT));
@@ -63,7 +65,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void savingAnExistingUsername_isAConflict_andNothingIsSaved() {
-        EmployeeService service = new EmployeeService(employeeRepository, encoder);
+        EmployeeService service = new EmployeeService(employeeRepository, encoder, entryRepository);
         when(employeeRepository.existsByUsernameIgnoreCase("ana")).thenReturn(true);
 
         org.assertj.core.api.Assertions.assertThatThrownBy(
@@ -82,7 +84,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void employeeSave_returnsNameUsernameAndRole() {
-        EmployeeService service = new EmployeeService(employeeRepository, encoder);
+        EmployeeService service = new EmployeeService(employeeRepository, encoder, entryRepository);
         when(employeeRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         EmployeeDto result = service.save(new EmployeeCreateDto("Ana Pop", "ana", "pw", Role.ADMIN));
@@ -94,7 +96,7 @@ class EmployeeAndClientServiceTest {
 
     @Test
     void employeeFindAll_mapsEveryEmployee() {
-        EmployeeService service = new EmployeeService(employeeRepository, encoder);
+        EmployeeService service = new EmployeeService(employeeRepository, encoder, entryRepository);
         when(employeeRepository.findAll()).thenReturn(List.of(
             new Employee("A", "a", "h", Role.ADMIN), new Employee("B", "b", "h", Role.ANGAJAT)));
 

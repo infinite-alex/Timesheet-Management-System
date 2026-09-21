@@ -35,7 +35,11 @@ class AdminSeederTest {
     PasswordEncoder encoder = new BCryptPasswordEncoder();
 
     private AdminSeeder seeder(String configured) {
-        return new AdminSeeder(repository, encoder, configured);
+        return new AdminSeeder(repository, encoder, configured, false);
+    }
+
+    private AdminSeeder resettingSeeder(String configured) {
+        return new AdminSeeder(repository, encoder, configured, true);
     }
 
     private String capturedConsole(Runnable action) {
@@ -88,11 +92,23 @@ class AdminSeederTest {
     }
 
     @Test
-    void existingAdmin_withDifferentConfiguredPassword_getsItsPasswordReplaced() {
+    void existingAdmin_withDifferentConfiguredPassword_isLeftUntouchedByDefault() {
+        Employee admin = new Employee("Admin", "admin", encoder.encode("parolaSchimbataDinUI1"), Role.ADMIN);
+        when(repository.findByUsername("admin")).thenReturn(Optional.of(admin));
+
+        seeder(STRONG).run();
+
+        verify(repository, never()).save(any());
+        assertThat(encoder.matches("parolaSchimbataDinUI1", admin.getPassword())).isTrue();
+        assertThat(encoder.matches(STRONG, admin.getPassword())).isFalse();
+    }
+
+    @Test
+    void existingAdmin_withResetFlag_getsItsPasswordReplaced() {
         Employee admin = new Employee("Admin", "admin", encoder.encode("admin123"), Role.ADMIN);
         when(repository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
-        String console = capturedConsole(() -> seeder(STRONG).run());
+        String console = capturedConsole(() -> resettingSeeder(STRONG).run());
 
         verify(repository).save(admin);
         assertThat(encoder.matches(STRONG, admin.getPassword())).isTrue();
@@ -105,7 +121,17 @@ class AdminSeederTest {
         Employee admin = new Employee("Admin", "admin", encoder.encode(STRONG), Role.ADMIN);
         when(repository.findByUsername("admin")).thenReturn(Optional.of(admin));
 
-        seeder(STRONG).run();
+        resettingSeeder(STRONG).run();
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void resetFlag_withoutAConfiguredPassword_changesNothing() {
+        Employee admin = new Employee("Admin", "admin", encoder.encode("altaParola123"), Role.ADMIN);
+        when(repository.findByUsername("admin")).thenReturn(Optional.of(admin));
+
+        resettingSeeder("").run();
 
         verify(repository, never()).save(any());
     }

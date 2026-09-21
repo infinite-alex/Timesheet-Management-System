@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice(annotations = RestController.class)
 public class ApiExceptionHandler {
@@ -31,6 +32,11 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiError> unreadable(HttpMessageNotReadableException ex) {
         return ResponseEntity.badRequest()
             .body(new ApiError("Datele trimise nu sunt valide. Verifică data și luna.", Map.of()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> badParameter(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest().body(new ApiError("Identificator invalid.", Map.of()));
     }
 
     @ExceptionHandler(BadRequestException.class)

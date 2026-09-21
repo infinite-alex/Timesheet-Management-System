@@ -27,6 +27,7 @@ public class EmployeeUserDetailsService implements UserDetailsService {
             .username(employee.getUsername())
             .password(employee.getPassword())
             .roles(employee.getRole().name())
+            .disabled(!employee.isActive())
             .build();
     }
 }

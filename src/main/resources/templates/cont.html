@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Contul meu')}"></head>
+<body>
+<header th:replace="~{fragments :: hero('Contul meu', 'Datele contului și schimbarea parolei.', ${username}, ${roleLabel}, null)}"></header>
+
+<main>
+    <div class="account-grid">
+        <div class="card">
+            <div class="card-head"><div><h2>Contul</h2></div></div>
+            <div class="card-body">
+                <div class="profile-row"><span>Nume</span><strong th:text="${profile.name()}">Nume</strong></div>
+                <div class="profile-row"><span>Username</span><span class="mono" th:text="${profile.username()}">user</span></div>
+                <div class="profile-row"><span>Rol</span><span class="pill" th:classappend="${profile.role().name() == 'ADMIN'} ? 'pill-dark'" th:text="${roleLabel}">Angajat</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Schimbă parola</h2><p>Îți trebuie parola curentă. Parola nouă are cel puțin 8 caractere.</p></div></div>
+            <div class="card-body">
+                <form id="passwordForm" class="form-grid" style="grid-template-columns:1fr">
+                    <div class="field"><label for="currentPassword">Parola curentă</label><input class="input" type="password" id="currentPassword" autocomplete="current-password" required /></div>
+                    <div class="field"><label for="newPassword">Parola nouă</label><input class="input" type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
+                    <div class="field"><label for="confirmPassword">Confirmă parola nouă</label><input class="input" type="password" id="confirmPassword" autocomplete="new-password" minlength="8" maxlength="72" required /></div>
+                    <div><button type="submit" class="btn btn-primary" id="passwordSave">Schimbă parola</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script th:src="@{/js/app.js}"></script>
+<script>
+    var form = document.getElementById('passwordForm');
+    var button = document.getElementById('passwordSave');
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        var next = document.getElementById('newPassword').value;
+        if (next !== document.getElementById('confirmPassword').value) {
+            toast('Parolele noi nu coincid.', 'error');
+            return;
+        }
+        button.disabled = true;
+        sendJson('POST', '/api/account/password', {
+            currentPassword: document.getElementById('currentPassword').value,
+            newPassword: next,
+            confirmPassword: document.getElementById('confirmPassword').value
+        }).then(function () {
+            form.reset();
+            toast('Parola a fost schimbată.');
+            button.disabled = false;
+        }).catch(function (err) {
+            toast(err.message, 'error');
+            button.disabled = false;
+        });
+    });
+</script>
+</body>
+</html>
