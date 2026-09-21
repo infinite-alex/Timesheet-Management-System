@@ -1,6 +1,8 @@
 package timesheet_management_system.service;
 
 import timesheet_management_system.dto.TimesheetEntryDto;
+import timesheet_management_system.exception.BadRequestException;
+import timesheet_management_system.exception.ResourceNotFoundException;
 import timesheet_management_system.model.Client;
 import timesheet_management_system.model.Employee;
 import timesheet_management_system.model.Role;
@@ -56,6 +58,9 @@ public class TimesheetEntryService {
 
         Long effectiveEmployeeId;
         if (currentEmployee.getRole() == Role.ADMIN) {
+            if (dto.employeeId() == null) {
+                throw new BadRequestException("Ca administrator trebuie să alegi angajatul pentru care salvezi pontajul.");
+            }
             effectiveEmployeeId = dto.employeeId();
         } else {
             effectiveEmployeeId = currentEmployee.getId();
@@ -102,12 +107,12 @@ public class TimesheetEntryService {
     }
     private TimesheetEntry toEntity(TimesheetEntryDto dto) {
     Employee employee = employeeRepository.findById(dto.employeeId())
-        .orElseThrow(() -> new RuntimeException("Employee not found: " + dto.employeeId()));
+        .orElseThrow(() -> new ResourceNotFoundException("Angajatul cu id " + dto.employeeId() + " nu există."));
 
     Client client;
     if (dto.clientId() != null) {
         client = clientRepository.findById(dto.clientId())
-            .orElseThrow(() -> new RuntimeException("Client not found: " + dto.clientId()));
+            .orElseThrow(() -> new ResourceNotFoundException("Clientul cu id " + dto.clientId() + " nu există."));
     } else {
         client = null;
     }

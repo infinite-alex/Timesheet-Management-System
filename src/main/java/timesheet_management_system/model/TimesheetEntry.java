@@ -55,7 +55,7 @@ public class TimesheetEntry {
         this.client = client;
         this.workingmonth = workingmonth;
         this.totalMinutes = totalMinutes;
-        this.actions = new ArrayList<>(actions);
+        this.actions = actions == null ? new ArrayList<>() : new ArrayList<>(actions);
         this.extranote=extranote;
 
     }
@@ -72,7 +72,7 @@ public class TimesheetEntry {
         this.totalMinutes = totalMinutes;
     }
     public void setActions(List<String> actions){
-        this.actions = new ArrayList<>(actions);
+        this.actions = actions == null ? new ArrayList<>() : new ArrayList<>(actions);
     }
     public void setExtraNote(String extranote){
         this.extranote = extranote;

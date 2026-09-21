@@ -31,6 +31,7 @@
 
             <div class="alert alert-error" th:if="${param.error}">Username sau parolă greșite. Încearcă din nou.</div>
             <div class="alert alert-ok" th:if="${param.logout}">Te-ai deconectat.</div>
+            <div class="alert alert-ok" th:if="${param.registered}">Cont creat. Te poți autentifica acum.</div>
 
             <form th:action="@{/login}" method="post">
                 <div class="field">
@@ -43,6 +44,8 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">Intră în cont</button>
             </form>
+
+            <p class="switch">Nu ai cont? <a th:href="@{/register}">Creează unul</a></p>
         </div>
     </section>
 </div>

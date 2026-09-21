@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import timesheet_management_system.dto.EmployeeCreateDto;
 import timesheet_management_system.dto.EmployeeDto;
 
@@ -28,7 +29,7 @@ public class EmployeeController {
         return employeeService.findAll();
     }
     @PostMapping
-    public EmployeeDto create(@RequestBody EmployeeCreateDto dto){
+    public EmployeeDto create(@Valid @RequestBody EmployeeCreateDto dto){
         return employeeService.save(dto);
     }
 }

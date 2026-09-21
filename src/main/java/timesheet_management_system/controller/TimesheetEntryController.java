@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import jakarta.validation.Valid;
 import timesheet_management_system.dto.TimesheetEntryDto;
 
 import timesheet_management_system.service.TimesheetEntryService;
@@ -27,7 +28,7 @@ public class TimesheetEntryController {
         return timesheetEntryService.findAll();
     }
     @PostMapping
-    public TimesheetEntryDto create(@RequestBody TimesheetEntryDto dto){
+    public TimesheetEntryDto create(@Valid @RequestBody TimesheetEntryDto dto){
         return timesheetEntryService.save(dto);
     }
 }

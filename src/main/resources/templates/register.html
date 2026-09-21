@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Creare cont')}"></head>
+<body>
+<div class="auth">
+    <section class="auth-side">
+        <div class="brand">
+            <span class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+            </span>
+            <span>Pontaj</span>
+        </div>
+
+        <div>
+            <h1>Începe să-ți <span>pontezi orele.</span></h1>
+            <p class="lead">Creează-ți contul în câteva secunde și adaugă primul pontaj chiar acum.</p>
+        </div>
+
+        <div class="auth-foot">Timesheet Management System</div>
+    </section>
+
+    <section class="auth-main">
+        <div class="auth-card">
+            <h2>Creează cont</h2>
+            <p class="sub">Completează datele de mai jos.</p>
+
+            <div class="alert alert-error" th:if="${error}" th:text="${error}">Eroare</div>
+
+            <form th:action="@{/register}" method="post">
+                <div class="field">
+                    <label for="name">Nume complet</label>
+                    <input class="input" type="text" id="name" name="name" th:value="${name}" autocomplete="name" maxlength="100" autofocus required />
+                </div>
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input class="input" type="text" id="username" name="username" th:value="${username}" autocomplete="username" minlength="3" maxlength="30" required />
+                    <span class="hint">3-30 caractere: litere, cifre, punct, minus, underscore.</span>
+                </div>
+                <div class="field">
+                    <label for="password">Parolă</label>
+                    <input class="input" type="password" id="password" name="password" autocomplete="new-password" minlength="8" maxlength="72" required />
+                    <span class="hint">Cel puțin 8 caractere.</span>
+                </div>
+                <div class="field">
+                    <label for="confirmPassword">Confirmă parola</label>
+                    <input class="input" type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Creează cont</button>
+            </form>
+
+            <p class="switch">Ai deja cont? <a th:href="@{/login}">Intră în cont</a></p>
+        </div>
+    </section>
+</div>
+</body>
+</html>
