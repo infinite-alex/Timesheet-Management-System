@@ -334,6 +334,10 @@ textarea.input { resize: vertical; min-height: 88px; }
 .auth-card .sub { color: var(--muted); margin: 6px 0 28px; }
 .auth-card form { display: grid; gap: 18px; }
 
+.switch { margin-top: 22px; text-align: center; color: var(--muted); font-size: 14px; }
+.switch a { color: var(--brand-600); font-weight: 600; text-decoration: none; }
+.switch a:hover { text-decoration: underline; }
+
 .alert { padding: 12px 14px; border-radius: 12px; font-size: 14px; font-weight: 500; margin-bottom: 18px; }
 .alert-error { background: var(--danger-50); color: #991b1b; border: 1px solid #fecaca; }
 .alert-ok { background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-100); }

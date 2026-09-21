@@ -51,11 +51,14 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         }).then(function (res) {
+            if (res.redirected) throw new Error('Sesiunea a expirat. Autentifică-te din nou.');
             if (res.ok) return res.json();
-            var msg = res.status === 403
-                ? 'Nu ai permisiunea pentru această acțiune.'
-                : 'Nu s-a putut salva. Verifică datele și încearcă din nou.';
-            throw new Error(msg);
+            return res.json().catch(function () { return {}; }).then(function (body) {
+                var msg = body.error || (res.status === 403
+                    ? 'Nu ai permisiunea pentru această acțiune.'
+                    : 'Nu s-a putut salva. Verifică datele și încearcă din nou.');
+                throw new Error(msg);
+            });
         });
     };
 
