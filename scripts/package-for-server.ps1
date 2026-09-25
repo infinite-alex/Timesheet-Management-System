@@ -62,7 +62,18 @@ try {
     Move-Item $jarCopy (Join-Path $target $jar.Name)
 
     if (Test-Path $OutFile) { Remove-Item $OutFile -Force }
-    Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $OutFile
+    # Compress-Archive din PowerShell 5.1 scrie caile cu "\"; unele programe de dezarhivare nu mai creeaza
+    # atunci folderul scripts\. Scriem noi intrarile, cu "/" (formatul standard zip).
+    Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+    $zip = [IO.Compression.ZipFile]::Open($OutFile, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($file in Get-ChildItem $staging -Recurse -File) {
+            $entry = $file.FullName.Substring($staging.Length + 1).Replace('\', '/')
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $entry, [IO.Compression.CompressionLevel]::Optimal)
+        }
+    } finally {
+        $zip.Dispose()
+    }
     $size = [math]::Round((Get-Item $OutFile).Length / 1MB, 1)
     Write-Host "Gata: $OutFile ($size MB, $($files.Count) fisiere + $($jar.Name))" -ForegroundColor Green
 } finally {

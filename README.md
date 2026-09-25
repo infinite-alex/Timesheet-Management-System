@@ -78,6 +78,13 @@ Backup manual: `powershell -File scripts\backup-db.ps1`.
 Instalare pe serverul firmei: `scripts\package-for-server.ps1` face un zip (fara datele clientilor) de copiat pe server;
 pe server, `scripts\create-shortcut.ps1` creeaza `Pontaj.url` cu adresa serverului, de copiat pe laptopurile angajatilor.
 
+Pe server, fiecare pas are si un fisier `.cmd` in radacina proiectului (dublu-click, fara comenzi tastate; cele care
+au nevoie de administrator cer singure drepturile): `1-pregateste-baza-de-date` (`setup-database.ps1`),
+`2-seteaza-parola-admin` (`set-admin-password.ps1`), `3-porneste-aplicatia-automat` (`install-autostart.ps1`),
+`4-deschide-firewall` (`open-firewall.ps1`), `5-testeaza-backup` (`test-backup.ps1`),
+`6-scurtatura-pentru-laptopuri` (`create-shortcut.ps1`), `7-dupa-prima-logare-sterge-parola-admin`
+(`set-admin-password.ps1 -Remove`) si `actualizeaza-aplicatia` (`update-server.ps1`).
+
 Restaurare (intr-o baza noua, ca sa verifici datele, nu suprascrie `timesheetdb`):
 
 ```

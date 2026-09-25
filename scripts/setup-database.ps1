@@ -139,5 +139,5 @@ if ($saved -eq $password) {
 }
 
 Write-Host ''
-Write-Host "GATA. Baza de date $Database e pregatita. Urmatorul pas: ADMIN_PASSWORD si install-autostart (ghid, B4-B5)." -ForegroundColor Green
+Write-Host "GATA. Baza de date $Database e pregatita." -ForegroundColor Green
 Write-Host ''

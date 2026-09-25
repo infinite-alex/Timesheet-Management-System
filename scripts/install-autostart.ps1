@@ -30,6 +30,15 @@ if (-not ([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Pri
 $scripts = $PSScriptRoot
 $root = Split-Path $scripts -Parent
 $user = $identity.Name
+
+# parolele trebuie sa fie pe ACELASI cont Windows cu care se creeaza sarcinile
+$dbPassword = @('User', 'Machine') | ForEach-Object { [Environment]::GetEnvironmentVariable('DB_PASSWORD', $_) } | Where-Object { $_ } | Select-Object -First 1
+if (-not $dbPassword) {
+    throw "DB_PASSWORD nu este setat pentru contul $user. Ruleaza intai pregatirea bazei de date (setup-database.ps1) logat cu acest cont. Daca ai aprobat fereastra de administrator cu ALT cont, logheaza-te pe server cu contul ales pentru aplicatie."
+}
+if (-not $SkipServer -and -not (@('User', 'Machine') | ForEach-Object { [Environment]::GetEnvironmentVariable('ADMIN_PASSWORD', $_) } | Where-Object { $_ })) {
+    Write-Host "ATENTIE  ADMIN_PASSWORD nu este setat pentru $user. Daca e prima instalare, aplicatia genereaza o parola de admin aleatorie si o scrie o singura data in logs\console.log." -ForegroundColor Yellow
+}
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType S4U -RunLevel Limited
 $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 
