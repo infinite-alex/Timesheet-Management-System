@@ -75,6 +75,16 @@ Rulare manuala, fara sarcini: `powershell -File scripts\run-server.ps1`.
 
 Backup manual: `powershell -File scripts\backup-db.ps1`.
 
+## Demo (copie separata, pentru incercari)
+
+- `porneste-demo.cmd` (dublu-clic) porneste o copie a aplicatiei pe http://localhost:8081, cu baza ei de date
+  `timesheetdb_demo`. Serverul normal (8080, `timesheetdb`) nu e atins. La prima pornire creeaza baza si cere parola
+  contului admin din demo. Demo-ul merge cat timp fereastra e deschisa.
+- `reseteaza-parola-demo.cmd` cere o parola noua pentru adminul din demo si porneste demo-ul cu ea. Parola de pe
+  serverul normal nu se schimba. Daca demo-ul e deja pornit, inchide intai fereastra lui.
+- Parolele scrise acolo se folosesc doar in fereastra respectiva; nu se salveaza in Windows (`ADMIN_PASSWORD` si
+  `ADMIN_RESET_PASSWORD` salvate cu `setx` sunt ignorate de demo).
+
 Instalare pe serverul firmei: `scripts\package-for-server.ps1` face un zip (fara datele clientilor) de copiat pe server;
 pe server, `scripts\create-shortcut.ps1` creeaza `Pontaj.url` cu adresa serverului, de copiat pe laptopurile angajatilor.
 
