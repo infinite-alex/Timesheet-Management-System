@@ -23,7 +23,7 @@ function Write-Log([string]$message) {
     Add-Content -Path $runLog -Value ('{0:yyyy-MM-dd HH:mm:ss}  {1}' -f (Get-Date), $message) -Encoding UTF8
 }
 
-foreach ($name in 'DB_PASSWORD', 'ADMIN_PASSWORD') {
+foreach ($name in 'DB_PASSWORD', 'ADMIN_PASSWORD', 'ADMIN_RESET_PASSWORD') {
     if (-not [Environment]::GetEnvironmentVariable($name, 'Process')) {
         foreach ($scope in 'User', 'Machine') {
             $value = [Environment]::GetEnvironmentVariable($name, $scope)
