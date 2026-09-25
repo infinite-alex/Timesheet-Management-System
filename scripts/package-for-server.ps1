@@ -3,17 +3,19 @@
   Face un zip cu aplicatia, gata de copiat pe serverul firmei (stick USB).
 
 .DESCRIPTION
-  Pune in zip doar fisierele proiectului urmarite de git (plus cele noi, neignorate) si jar-ul din target\.
+  Copiaza fisierele proiectului urmarite de git (plus cele noi, neignorate) intr-un folder temporar,
+  construieste acolo jar-ul (cu teste) si pune in zip sursele, scripturile si jar-ul.
   NU include datele clientilor (05.2026\, *.xlsx, *.zip), jurnalele sau notele interne - sunt in .gitignore.
-  Nu construieste jar-ul (ar fi blocat de serverul pornit pe acest calculator); refuza daca jar-ul e mai vechi
-  decat codul din src\. Atunci ruleaza intai scripts\update-server.ps1 (reconstruieste si reporneste).
+  Build-ul se face in copie, deci nu atinge jar-ul folosit de serverul pornit pe acest calculator.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\package-for-server.ps1
   powershell -ExecutionPolicy Bypass -File scripts\package-for-server.ps1 -OutFile E:\Timesheet-server.zip
+  powershell -ExecutionPolicy Bypass -File scripts\package-for-server.ps1 -SkipTests
 #>
 param(
-    [string]$OutFile = (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Timesheet-server.zip')
+    [string]$OutFile = (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Timesheet-server.zip'),
+    [switch]$SkipTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,16 +24,6 @@ $staging = Join-Path $env:TEMP "timesheet-package-$(Get-Date -Format 'yyyyMMddHH
 
 Push-Location $root
 try {
-    $jar = Get-ChildItem (Join-Path $root 'target') -Filter 'demo-*.jar' -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -notmatch 'original' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if (-not $jar) { throw 'Nu exista jar-ul in target\. Ruleaza intai: mvnw.cmd package' }
-
-    $newest = Get-ChildItem (Join-Path $root 'src\main'), (Join-Path $root 'pom.xml') -Recurse -File |
-        Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    if ($newest.LastWriteTime -gt $jar.LastWriteTime) {
-        throw "Jar-ul e mai vechi decat $($newest.Name). Ruleaza intai scripts\update-server.ps1 (ca administrator)."
-    }
-
     # fisierele urmarite + cele noi neignorate; .gitignore tine afara datele clientilor
     $files = @(git ls-files) + @(git ls-files --others --exclude-standard) |
         Where-Object { $_ -and (Test-Path $_ -PathType Leaf) } | Sort-Object -Unique
@@ -42,14 +34,37 @@ try {
         New-Item -ItemType Directory -Force -Path (Split-Path $dest -Parent) | Out-Null
         Copy-Item $f $dest
     }
-    New-Item -ItemType Directory -Force -Path (Join-Path $staging 'target') | Out-Null
-    Copy-Item $jar.FullName (Join-Path $staging 'target')
+} finally {
+    Pop-Location
+}
+
+try {
+    Push-Location $staging
+    try {
+        Write-Host 'Construiesc jar-ul intr-o copie a proiectului...'
+        $mvnArgs = @('-q', 'package')
+        if ($SkipTests) { $mvnArgs += '-DskipTests' }
+        & (Join-Path $staging 'mvnw.cmd') @mvnArgs
+        if ($LASTEXITCODE -ne 0) { throw 'Build esuat (sau au picat teste); nu am facut zip-ul.' }
+    } finally {
+        Pop-Location
+    }
+
+    $target = Join-Path $staging 'target'
+    $jar = Get-ChildItem $target -Filter 'demo-*.jar' | Where-Object { $_.Name -notmatch 'original' } | Select-Object -First 1
+    if (-not $jar) { throw 'Build-ul nu a produs un jar.' }
+
+    # in zip ramane din target\ doar jar-ul (fara clase compilate si rapoarte de teste)
+    $jarCopy = Join-Path $env:TEMP $jar.Name
+    Move-Item $jar.FullName $jarCopy -Force
+    Remove-Item $target -Recurse -Force
+    New-Item -ItemType Directory -Path $target | Out-Null
+    Move-Item $jarCopy (Join-Path $target $jar.Name)
 
     if (Test-Path $OutFile) { Remove-Item $OutFile -Force }
     Compress-Archive -Path (Join-Path $staging '*') -DestinationPath $OutFile
     $size = [math]::Round((Get-Item $OutFile).Length / 1MB, 1)
     Write-Host "Gata: $OutFile ($size MB, $($files.Count) fisiere + $($jar.Name))" -ForegroundColor Green
 } finally {
-    Pop-Location
     if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
 }
