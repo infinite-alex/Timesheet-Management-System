@@ -2,10 +2,12 @@ package timesheet_management_system.controller;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import timesheet_management_system.exception.BadRequestException;
 import timesheet_management_system.model.ActionCatalog;
 import timesheet_management_system.report.CsvExporter;
+import timesheet_management_system.report.ExcelExporter;
 import timesheet_management_system.report.PeriodResolver;
 import timesheet_management_system.report.PeriodResolver.DateRange;
 import timesheet_management_system.report.Report;
@@ -99,6 +102,27 @@ public class ReportController {
             @RequestParam(name = "clientId", required = false) List<String> clientIds,
             @RequestParam(name = "employeeId", required = false) List<String> employeeIds,
             @RequestParam(required = false) String task) {
+        return export(view, period, from, to, clientIds, employeeIds, task, "csv",
+            new MediaType("text", "csv", StandardCharsets.UTF_8),
+            (report, query) -> CsvExporter.toCsv(report));
+    }
+
+    @GetMapping("/rapoarte/export.xlsx")
+    public ResponseEntity<byte[]> exportExcel(@RequestParam(required = false) String view,
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(name = "clientId", required = false) List<String> clientIds,
+            @RequestParam(name = "employeeId", required = false) List<String> employeeIds,
+            @RequestParam(required = false) String task) {
+        return export(view, period, from, to, clientIds, employeeIds, task, "xlsx",
+            MediaType.parseMediaType(ExcelExporter.CONTENT_TYPE),
+            (report, query) -> ExcelExporter.toXlsx(report, periodLabel(query)));
+    }
+
+    private ResponseEntity<byte[]> export(String view, String period, String from, String to,
+            List<String> clientIds, List<String> employeeIds, String task, String extension,
+            MediaType contentType, BiFunction<Report, Query, byte[]> writer) {
 
         String periodKey = period == null || period.isBlank() ? "luna" : period;
         Query query;
@@ -112,12 +136,20 @@ public class ReportController {
 
         Report report = reportService.build(query.view(), query.filter());
         String range = "tot".equals(query.period()) ? "tot" : query.range().from() + "_" + query.range().to();
-        String filename = "raport-" + query.view().slug() + "-" + range + ".csv";
+        String filename = "raport-" + query.view().slug() + "-" + range + "." + extension;
 
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-            .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
-            .body(CsvExporter.toCsv(report));
+            .contentType(contentType)
+            .body(writer.apply(report, query));
+    }
+
+    private String periodLabel(Query query) {
+        if ("tot".equals(query.period())) {
+            return "tot istoricul";
+        }
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        return query.range().from().format(format) + " – " + query.range().to().format(format);
     }
 
     private Query parse(String view, String period, String from, String to,

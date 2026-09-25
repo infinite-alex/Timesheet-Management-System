@@ -12,7 +12,10 @@
                     <button type="submit" name="view" th:each="v : ${views}" th:value="${v.slug()}"
                             class="tab" th:classappend="${v == view} ? 'active'" th:text="${v.title()}">Vedere</button>
                 </div>
-                <a class="btn btn-primary" id="exportLink" th:href="@{/rapoarte/export.csv}">Descarcă CSV</a>
+                <div class="row-actions">
+                    <a class="btn btn-primary export-link" data-format="xlsx" th:href="@{/rapoarte/export.xlsx}">Descarcă Excel</a>
+                    <a class="btn btn-soft export-link" data-format="csv" th:href="@{/rapoarte/export.csv}">Descarcă CSV</a>
+                </div>
             </div>
 
             <div class="card-body">
@@ -137,7 +140,7 @@
     period.addEventListener('change', function () { rangeFields.hidden = period.value !== 'interval'; });
 
     var form = document.getElementById('reportForm');
-    var exportLink = document.getElementById('exportLink');
+    var exportLinks = document.querySelectorAll('.export-link');
     function currentView() {
         var active = document.querySelector('.tab.active');
         return active ? active.value : 'angajati';
@@ -145,7 +148,9 @@
     function refreshExport() {
         var params = new URLSearchParams(new FormData(form));
         params.set('view', currentView());
-        exportLink.href = '/rapoarte/export.csv?' + params.toString();
+        exportLinks.forEach(function (link) {
+            link.href = '/rapoarte/export.' + link.dataset.format + '?' + params.toString();
+        });
     }
     form.addEventListener('change', refreshExport);
     refreshExport();

@@ -9,10 +9,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
@@ -53,7 +63,7 @@ class ReportPageTest extends IntegrationTestBase {
 
     @Test
     void reports_areForAdminsOnly() throws Exception {
-        for (String url : List.of("/rapoarte", "/rapoarte?view=clienti", "/rapoarte/export.csv")) {
+        for (String url : List.of("/rapoarte", "/rapoarte?view=clienti", "/rapoarte/export.csv", "/rapoarte/export.xlsx")) {
             mvc.perform(get(url).with(asWorker())).andExpect(status().isForbidden());
             mvc.perform(get(url)).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/login"));
         }
@@ -198,5 +208,96 @@ class ReportPageTest extends IntegrationTestBase {
         String body = csv("?view=angajati&period=interval&from=2030-01-01&to=2030-01-31");
 
         assertThat(body).contains("Angajat;Client;Minute;Ore;Nr. pontaje").contains("TOTAL;;0;0,00;0");
+    }
+
+    private Sheet xlsx(String query) throws Exception {
+        MvcResult result = mvc.perform(get("/rapoarte/export.xlsx" + query).with(asAdmin())).andExpect(status().isOk()).andReturn();
+        Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(result.getResponse().getContentAsByteArray()));
+        return workbook.getSheetAt(0);
+    }
+
+    private List<String> rowValues(Row row) {
+        List<String> values = new ArrayList<>();
+        DataFormatter formatter = new DataFormatter(Locale.ROOT);
+        row.forEach(cell -> values.add(formatter.formatCellValue(cell)));
+        return values;
+    }
+
+    @Test
+    void excelExport_isAnAttachmentNamedLikeTheCsv() throws Exception {
+        mvc.perform(get("/rapoarte/export.xlsx").param("view", "clienti").param("period", "tot").with(asAdmin()))
+            .andExpect(status().isOk())
+            .andExpect(header().string("Content-Type", containsString("spreadsheetml.sheet")))
+            .andExpect(header().string("Content-Disposition", containsString("attachment")))
+            .andExpect(header().string("Content-Disposition", containsString("raport-clienti-tot.xlsx")));
+
+        mvc.perform(get("/rapoarte/export.xlsx").param("period", "interval").param("from", "2026-09-01").param("to", "2026-09-30").with(asAdmin()))
+            .andExpect(header().string("Content-Disposition", containsString("raport-angajati-2026-09-01_2026-09-30.xlsx")));
+    }
+
+    @Test
+    void excelExport_hasTitleHeaderNumericRowsAndTotal() throws Exception {
+        Sheet sheet = xlsx("?view=clienti&period=interval&from=2026-09-01&to=2026-09-30");
+
+        assertThat(sheet.getRow(0).getCell(0).getStringCellValue()).isEqualTo("Raport pe clienți");
+        assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Perioada: 01.09.2026 – 30.09.2026");
+        assertThat(rowValues(sheet.getRow(3))).containsExactly("Client", "Angajat", "Minute", "Ore", "Nr. pontaje");
+        assertThat(rowValues(sheet.getRow(4))).containsExactly("Alfa SRL", "Nume other", "120", "2.00", "1");
+        assertThat(rowValues(sheet.getRow(5))).containsExactly("Alfa SRL", "Nume worker", "60", "1.00", "1");
+        assertThat(rowValues(sheet.getRow(6))).containsExactly("Beta SRL", "Nume worker", "45", "0.75", "1");
+        assertThat(rowValues(sheet.getRow(7))).containsExactly("TOTAL", "", "225", "3.75", "3");
+
+        assertThat(sheet.getRow(4).getCell(3).getCellType()).isEqualTo(CellType.NUMERIC);
+        assertThat(sheet.getRow(4).getCell(3).getNumericCellValue()).isEqualTo(2.0);
+    }
+
+    @Test
+    void excelExport_respectsFilters() throws Exception {
+        Sheet sheet = xlsx("?view=angajati&period=tot&employeeId=" + other.getId());
+
+        assertThat(sheet.getRow(1).getCell(0).getStringCellValue()).isEqualTo("Perioada: tot istoricul");
+        assertThat(rowValues(sheet.getRow(4))).containsExactly("Nume other", "Alfa SRL", "120", "2.00", "1");
+        assertThat(rowValues(sheet.getRow(5))).containsExactly("TOTAL", "", "120", "2.00", "1");
+        assertThat(sheet.getRow(6)).isNull();
+    }
+
+    @Test
+    void excelExport_storesFormulaLikeNamesAsPlainText() throws Exception {
+        Client formula = clients.save(new Client("=HYPERLINK(\"http://evil\";\"click\")"));
+        entry(LocalDate.of(2026, 9, 9), worker, formula, "Inchidere luna", 10);
+
+        Sheet sheet = xlsx("?view=clienti&period=tot");
+
+        boolean found = false;
+        for (Row row : sheet) {
+            for (Cell cell : row) {
+                assertThat(cell.getCellType()).isNotEqualTo(CellType.FORMULA);
+                if (cell.getCellType() == CellType.STRING && cell.getStringCellValue().startsWith("=HYPERLINK")) {
+                    found = true;
+                }
+            }
+        }
+        assertThat(found).isTrue();
+    }
+
+    @Test
+    void excelExport_ofAnEmptyPeriod_hasHeaderAndZeroTotal() throws Exception {
+        Sheet sheet = xlsx("?view=sarcini&period=interval&from=2030-01-01&to=2030-01-31");
+
+        assertThat(rowValues(sheet.getRow(3))).containsExactly("Sarcină", "Angajat", "Minute", "Ore", "Nr. pontaje");
+        assertThat(rowValues(sheet.getRow(4))).containsExactly("TOTAL", "", "0", "0.00", "0");
+    }
+
+    @Test
+    void excelExport_withAnInvalidInterval_isABadRequest() throws Exception {
+        mvc.perform(get("/rapoarte/export.xlsx").param("period", "interval").param("from", "2026-09-30").param("to", "2026-09-01").with(asAdmin()))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string(containsString("după data de sfârșit")));
+    }
+
+    @Test
+    void reportPage_offersBothExcelAndCsv() throws Exception {
+        assertThat(page("?period=tot")).contains("/rapoarte/export.xlsx").contains("Descarcă Excel")
+            .contains("/rapoarte/export.csv").contains("Descarcă CSV");
     }
 }
